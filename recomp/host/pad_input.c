@@ -1373,11 +1373,16 @@ void pad_font_draw(uint32_t font, uint32_t g, int x, int y, uint32_t str, uint32
 void pad_dave_prompt(int x, int y, uint32_t font)
 {
     (void)x, (void)y, (void)font;
-    static int ready;
-    if (ready) return;
-    ready = 1;
+    /* the desktop apps keep the PC's own words while the mouse plays, the Android app says tap while touch plays;
+     * a controller's play (and the Switch) says press A. Written again whenever that changes. */
+    const char *want = "press <A> to continue";
+    if (pad_desktop && touch_mode) want = "click to continue";
+    else if (pad_touch_first && touch_mode) want = "tap to continue";
+    static const char *done;
+    if (done == want) return;
+    done = want;
     char text[24];
-    console_markup("press <A> to continue", text, sizeof text); /* 23 bytes at most */
+    console_markup(want, text, sizeof text); /* 23 bytes at most */
     memcpy(G2H(GAME_FN(0xd343dcu)), text, strlen(text) + 1);
 }
 

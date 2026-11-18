@@ -45,6 +45,7 @@ ALU = {"add": ("+", "ADD"), "sub": ("-", "SUB"), "and": ("&", "LOGIC"), "or": ("
 HOOKS = {
     0x912c70: "game_hook_bank_begin",   # SeedBank::Draw starts (the DLC stages' moved board: the bank where it is)
     0x91319d: "game_hook_bank_drawn",   # SeedBank::Draw: packets drawn, clip about to be cleared
+    0x913154: "game_hook_bank_label",   # ... a packet's key (the DLC's Keybind Hint) about to be written over it
     0x913347: "game_hook_bank_redraw",  # ... redraws every packet and the keyboard cursors' packets
     0x9135b0: "game_hook_bank_cursor",  # ... cleared the clip of its copy for a keyboard cursor's packet
     0x913881: "game_hook_bank_done",    # ... returns

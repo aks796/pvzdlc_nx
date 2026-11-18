@@ -23,9 +23,11 @@ void game_hook_bank_drawn(CPU *c)
     game_belt_level = (int32_t)(belt_clip[0] + belt_clip[2]) < 700;
 }
 
+static int bank_keys_covered;
 void game_hook_bank_redraw(CPU *c)
 {
     uint32_t g = c->esi;
+    bank_keys_covered = 1;
     for (int i = 0; i < 4; i++) g_clip[i] = g_rd32(g + 0x20 + 4 * i);
     int32_t right = (int32_t)(belt_clip[0] + belt_clip[2]), cur = (int32_t)(g_clip[0] + g_clip[2]);
     if (right < cur && right > (int32_t)g_clip[0]) {
@@ -57,9 +59,11 @@ static void bank_unpan(uint32_t g, int32_t dx)
     memcpy(G2H(g + 0x08), &t, 4);
 }
 static int32_t board_pan_dx(void);
+static int bank_keys;
 void game_hook_bank_begin(CPU *c)
 {
     bank_g = 0;
+    bank_keys = bank_keys_covered = 0;
     int32_t dx = board_pan_dx();
     uint32_t g = g_rd32(c->esp + 4);
     if (!dx || !g) return;
@@ -67,8 +71,72 @@ void game_hook_bank_begin(CPU *c)
     bank_unpan(g, -dx);
 }
 
+/* The DLC's "Keybind Hint" (LawnApp+0x656, Settings): SeedBank::Draw writes each packet's key (PlayerInfo +0x5b4c,
+ * 0x1c a packet) over its top-left corner right after the packet (TodDrawStringMatrix, 0x9c98f0, cdecl: Graphics *,
+ * Font *, const SexyMatrix3 &, const std::string &, const Color &, at the call 0x913154; the matrix holds screen
+ * coordinates). Then the keyboard players' pass (0x913347: co-op, so always while a controller plays, and versus)
+ * draws every packet again, over the keys: the keys kept here are written again after it, as on the PC without
+ * co-op, where nothing covers them. */
+#define TOD_DRAW_STRING_MATRIX 0x9c98f0u
+#define GFX_PUSH_STATE 0xa2cf40u
+#define GFX_POP_STATE 0xa2cba0u
+#define GFX_CLEAR_CLIP 0xa006f0u
+#define STR_CTOR 0x72a830u
+#define STR_DTOR 0x72cd50u
+static struct { uint32_t font, matrix[9], color[4]; char text[16]; } bank_key[16];
+static uint32_t bank_key_g;
+
+void game_hook_bank_label(CPU *c)
+{
+    uint32_t g = g_rd32(c->esp), font = g_rd32(c->esp + 4), m = g_rd32(c->esp + 8), s = g_rd32(c->esp + 12),
+             col = g_rd32(c->esp + 16);
+    if (bank_keys >= 16 || (bank_keys && g != bank_key_g)) return;
+    /* (this build's std::string: debug proxy +0, 16-byte buffer +4 or a pointer there, size +20, capacity +24) */
+    uint32_t n = g_rd32(s + 20), cap = g_rd32(s + 24), p = cap >= 16 ? g_rd32(s + 4) : s + 4;
+    if (!n || n > 15) return;
+    bank_key_g = g;
+    memcpy(bank_key[bank_keys].text, G2H(p), n);
+    bank_key[bank_keys].text[n] = 0;
+    bank_key[bank_keys].font = font;
+    for (int i = 0; i < 9; i++) bank_key[bank_keys].matrix[i] = g_rd32(m + 4 * i);
+    for (int i = 0; i < 4; i++) bank_key[bank_keys].color[i] = g_rd32(col + 4 * i);
+    bank_keys++;
+}
+
+static uint32_t bank_call(CPU *c, uint32_t fn, uint32_t self, int n, const uint32_t *args)
+{
+    uint32_t eax = c->eax, ecx = c->ecx, edx = c->edx;
+    c->ecx = self;
+    uint32_t r = rt_guest_call(c, fn + rt_img_delta, n, args);
+    c->eax = eax, c->ecx = ecx, c->edx = edx;
+    return r;
+}
+
+static void bank_keys_again(CPU *c)
+{
+    uint32_t g = bank_key_g, esp = c->esp;
+    /* scratch under the stack: the matrix (36 bytes), the colour (16), a std::string (28) and its text */
+    uint32_t base = (esp - 0x200) & ~15u, mat = base, col = base + 48, str = base + 64, txt = base + 96;
+    c->esp = base;
+    bank_call(c, GFX_PUSH_STATE, g, 0, NULL);
+    bank_call(c, GFX_CLEAR_CLIP, g, 0, NULL);
+    for (int k = 0; k < bank_keys; k++) {
+        for (int i = 0; i < 9; i++) g_wr32(mat + 4 * i, bank_key[k].matrix[i]);
+        for (int i = 0; i < 4; i++) g_wr32(col + 4 * i, bank_key[k].color[i]);
+        memcpy(G2H(txt), bank_key[k].text, strlen(bank_key[k].text) + 1);
+        bank_call(c, STR_CTOR, str, 1, &txt);
+        uint32_t args[5] = {g, bank_key[k].font, mat, str, col};
+        bank_call(c, TOD_DRAW_STRING_MATRIX, 0, 5, args);
+        bank_call(c, STR_DTOR, str, 0, NULL);
+    }
+    bank_call(c, GFX_POP_STATE, g, 0, NULL);
+    c->esp = esp;
+}
+
 void game_hook_bank_done(CPU *c)
 {
+    if (bank_keys && bank_keys_covered && bank_key_g == c->esi) bank_keys_again(c);
+    bank_keys = bank_keys_covered = 0;
     if (bank_g && bank_g == c->esi) bank_unpan(bank_g, bank_dx);
     bank_g = 0;
     if (g_patched && g_patched == c->esi)
