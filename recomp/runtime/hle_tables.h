@@ -1,0 +1,10 @@
+/* One line per HLE table (see rt_hle.c). */
+HLE_TABLE(hle_kernel32)
+HLE_TABLE(hle_advapi32)
+HLE_TABLE(hle_misc)
+HLE_TABLE(hle_user32)
+HLE_TABLE(hle_gdi32)
+HLE_TABLE(hle_ddraw)
+HLE_TABLE(hle_bass)
+HLE_TABLE(hle_seh)
+HLE_TABLE(hle_dsound)

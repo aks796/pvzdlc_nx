@@ -1,0 +1,17 @@
+.DS_Store
+__pycache__/
+# release packages (and the art download) go on the Releases page, not in the repository
+*.zip
+*.apk
+# made from the game's exe or its files: everyone makes their own (README, "Building")
+analysis/
+recomp/gen/
+recomp/build/
+gamedata/
+port_art/
+recomp/host/port_art.c
+recomp/third_party/libopenmpt/
+# the Android signing key: never publish it
+android/release.keystore
+android/keystore.pass
+release/mac/
