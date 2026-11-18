@@ -28,7 +28,7 @@
 #endif
 
 #include "rt.h"
-#include "evb_unpack.h"
+#include "dlc_setup.h"
 
 #define APP_NAME "Plants vs. Zombies DLC Edition"
 extern const char *rt_window_title;
@@ -89,35 +89,15 @@ static int exists(const char *dir, const char *name)
 
 #ifndef __ANDROID__
 static char own_exe[260]; /* (Windows, Linux: the app's own program, never the DLC's exe) */
-/* the biggest .exe in dir (the player's DLC Edition exe, any name), "" none */
-static void find_exe(const char *dir, char *out, size_t cap)
-{
-    out[0] = 0;
-    DIR *d = opendir(dir);
-    if (!d) return;
-    long long best = 0;
-    struct dirent *e;
-    while ((e = readdir(d))) {
-        size_t n = strlen(e->d_name);
-        if (n < 5 || strcasecmp(e->d_name + n - 4, ".exe") || !strcasecmp(e->d_name, "dlc_game.exe") ||
-            !strcasecmp(e->d_name, own_exe))
-            continue;
-        char p[PATH_MAX];
-        struct stat st;
-        snprintf(p, sizeof p, "%s/%s", dir, e->d_name);
-        if (stat(p, &st) == 0 && st.st_size > best) best = st.st_size, snprintf(out, cap, "%s", p);
-    }
-    closedir(d);
-}
-
 #ifdef __APPLE__
 /* the system's file chooser (through AppleScript, which needs no extra frameworks); "" if cancelled */
-static void choose_exe(char *out, size_t cap)
+/* (prompt goes inside single quotes for the shell: no apostrophes in it) */
+static void choose_exe(char *out, size_t cap, const char *prompt)
 {
     out[0] = 0;
-    FILE *f = popen("osascript -e 'POSIX path of (choose file with prompt \"Choose your Plants vs. Zombies: DLC "
-                    "Edition exe (v2.7.2)\")' 2>/dev/null",
-                    "r");
+    char cmd[600];
+    snprintf(cmd, sizeof cmd, "osascript -e 'POSIX path of (choose file with prompt \"%s\")' 2>/dev/null", prompt);
+    FILE *f = popen(cmd, "r");
     if (!f) return;
     if (!fgets(out, (int)cap, f)) out[0] = 0;
     pclose(f);
@@ -125,30 +105,32 @@ static void choose_exe(char *out, size_t cap)
 }
 #elif defined(_WIN32)
 /* the system's Open dialog; "" if cancelled */
-static void choose_exe(char *out, size_t cap)
+static void choose_exe(char *out, size_t cap, const char *prompt)
 {
-    wchar_t file[MAX_PATH] = L"";
+    wchar_t file[MAX_PATH] = L"", title[300];
+    MultiByteToWideChar(CP_UTF8, 0, prompt, -1, title, 300);
     OPENFILENAMEW o;
     memset(&o, 0, sizeof o);
     o.lStructSize = sizeof o;
-    o.lpstrFilter = L"Programs (*.exe)\0*.exe\0All files\0*.*\0";
+    o.lpstrFilter = L"The exe or the DLC's patch (*.exe, *.xdelta)\0*.exe;*.xdelta\0All files\0*.*\0";
     o.lpstrFile = file;
     o.nMaxFile = MAX_PATH;
-    o.lpstrTitle = L"Choose your Plants vs. Zombies: DLC Edition exe (v2.7.2)";
+    o.lpstrTitle = title;
     o.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
     out[0] = 0;
     if (GetOpenFileNameW(&o)) WideCharToMultiByte(CP_UTF8, 0, file, -1, out, (int)cap, NULL, NULL);
 }
 #elif defined(__linux__)
 /* the desktop's file chooser: zenity (GNOME, SteamOS) or kdialog (KDE); "" if cancelled or neither is there */
-static void choose_exe(char *out, size_t cap)
+static void choose_exe(char *out, size_t cap, const char *prompt)
 {
     out[0] = 0;
-    FILE *f = popen("if command -v zenity >/dev/null 2>&1; then zenity --file-selection --title='Choose your Plants vs. "
-                    "Zombies: DLC Edition exe (v2.7.2)' --file-filter='Programs | *.exe *.EXE' --file-filter='All files | *'; "
-                    "elif command -v kdialog >/dev/null 2>&1; then kdialog --title 'Choose your Plants vs. Zombies: DLC "
-                    "Edition exe (v2.7.2)' --getopenfilename \"$HOME\" '*.exe *.EXE'; fi 2>/dev/null",
-                    "r");
+    char cmd[1200];
+    snprintf(cmd, sizeof cmd, "if command -v zenity >/dev/null 2>&1; then zenity --file-selection --title='%s' "
+             "--file-filter='The exe or the patch | *.exe *.EXE *.xdelta' --file-filter='All files | *'; "
+             "elif command -v kdialog >/dev/null 2>&1; then kdialog --title '%s' --getopenfilename \"$HOME\" "
+             "'*.exe *.EXE *.xdelta'; fi 2>/dev/null", prompt, prompt);
+    FILE *f = popen(cmd, "r");
     if (!f) return;
     if (!fgets(out, (int)cap, f)) out[0] = 0;
     pclose(f);
@@ -211,32 +193,43 @@ static int app_setup(void)
         }
     }
 #endif
+    if (getenv("RT_APP_DIR")) snprintf(rt_game_dir, sizeof rt_game_dir, "%s", getenv("RT_APP_DIR")); /* (tests) */
     if (exists(rt_game_dir, "verbose")) rt_verbose = 1;
     if (exists(rt_game_dir, "dlc_game.exe") && exists(rt_game_dir, "main.pak")) return 0;
 
-    /* the first launch: the DLC Edition exe, put in the game folder or picked */
-    char exe[PATH_MAX];
-    find_exe(rt_game_dir, exe, sizeof exe);
+    /* the first launch: the DLC Edition exe, or the DLC's patch and the PvZ exe it is for, put in the game folder or
+     * picked (dlc_setup.c) */
+    char err[400];
+    int r = dlc_setup_from_dir(rt_game_dir, own_exe, boot_progress, err, sizeof err);
 #if defined(__APPLE__) || defined(_WIN32) || defined(__linux__)
-    if (!exe[0]) {
+    if (r == 1) {
+        char pick[PATH_MAX], base[PATH_MAX] = "";
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, APP_NAME,
-                                 "Choose your Plants vs. Zombies: DLC Edition v2.7.2 exe (the one the DLC team's patch "
-                                 "makes from your own copy of Plants vs. Zombies).\n\nThe game is unpacked from it once; "
-                                 "after that the exe isn't needed.",
+                                 "Choose your Plants vs. Zombies: DLC Edition v2.7.2 exe, or the DLC team's patch for your "
+                                 "own copy of Plants vs. Zombies (Steam Patch.xdelta, EA Patch.xdelta or OG "
+                                 "Patch.xdelta).\n\nThe game is unpacked from it once; after that it isn't needed.",
                                  NULL);
-        choose_exe(exe, sizeof exe);
+        choose_exe(pick, sizeof pick, "Choose your DLC Edition v2.7.2 exe, or the DLC patch (.xdelta)");
+        if (pick[0] && dlc_is_patch(pick)) {
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, APP_NAME,
+                                     "Now choose your own Plants vs. Zombies exe (PlantsVsZombies.exe from your Steam, EA "
+                                     "app or original install): the one this patch is for.",
+                                     NULL);
+            choose_exe(base, sizeof base, "Choose your PlantsVsZombies.exe");
+            if (!base[0]) pick[0] = 0;
+        }
+        if (pick[0]) r = dlc_setup_from_files(pick, base[0] ? base : NULL, rt_game_dir, boot_progress, err, sizeof err);
     }
 #endif
-    if (!exe[0]) {
+    if (r == 1) {
         char msg[1200];
-        snprintf(msg, sizeof msg, "No DLC Edition exe. Put your Plants vs. Zombies: DLC Edition v2.7.2 exe in\n%s\nand "
-                                  "start the game again.", rt_game_dir);
+        snprintf(msg, sizeof msg, "No DLC Edition exe. Put your Plants vs. Zombies: DLC Edition v2.7.2 exe in\n%s\n"
+                                  "(or the DLC's patch and your own PlantsVsZombies.exe) and start the game again.",
+                 rt_game_dir);
         fail(msg);
         return -1;
     }
-    char err[400];
-    boot_progress("Unpacking the game (first launch only)", 0);
-    if (evb_unpack(exe, rt_game_dir, boot_progress, err, sizeof err)) {
+    if (r) {
         fail(err);
         return -1;
     }

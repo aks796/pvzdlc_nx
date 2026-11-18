@@ -39,9 +39,10 @@ It is not an emulator. The DLC Edition's x86 exe is translated to C ahead of tim
 small Windows of its own (`recomp/runtime`: kernel32, user32, DirectDraw, Direct3D 7, DirectSound, BASS ...) runs it
 natively. The Switch draws with deko3d, the others with OpenGL / OpenGL ES through SDL2.
 
-**No game files are included.** You need your own DLC Edition v2.7.2 exe: the DLC team ships it as patches for your own
-copy of Plants vs. Zombies (Game of the Year, 1.0.0.1051, from Steam or the EA app). The first launch unpacks the game
-from it.
+**No game files are included.** You need your own Plants vs. Zombies (Game of the Year, 1.0.0.1051, from Steam or the
+EA app, or the original) and the DLC team's download of the DLC Edition v2.7.2, which is patches for it. The port
+applies the patch itself on the first launch (no DeltaPatcher needed), then unpacks the game; an exe you already
+patched works too.
 
 ## Download
 
@@ -53,8 +54,9 @@ controls.
 The build needs the game's exe, so nothing generated from it is in this repository; neither are the pictures (PopCap's
 and EA's art, or made from it). Both come from your side:
 
-1. **The game's exe.** Run any release once with your DLC Edition exe: it unpacks `dlc_game.exe` (the exe without its
-   Enigma Virtual Box packer) into its game folder. Copy it to `analysis/dlc_game.exe`.
+1. **The game's exe.** Run any release once with your PlantsVsZombies.exe and the DLC's patch (or your DLC Edition
+   exe): it unpacks `dlc_game.exe` (the exe without its Enigma Virtual Box packer) into its game folder. Copy it to
+   `analysis/dlc_game.exe`.
 2. **The recompiled code.** With a Python 3 that has `capstone` and `pefile`:
    `cd recomp && make gen PY=python3` (writes `recomp/gen/`, about 180 MB of C).
 3. **libopenmpt 0.8.9** (the MO3 music): unpack `libopenmpt-0.8.9+release.makefile.tar.gz` from

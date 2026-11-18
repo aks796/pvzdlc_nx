@@ -10,6 +10,8 @@ This package contains no game files. You need your own DLC Edition exe.
 
 Changes in Beta 2.4
 -------------------
+- No DeltaPatcher needed: the port makes the DLC Edition exe itself from your own PlantsVsZombies.exe
+  and the DLC team's patch for it (Steam / EA / OG Patch.xdelta), on the first launch.
 - Versus: the hedge at the right of the lawn covers the target zombies as the edge of the PC
   version's screen does: each target's sign and the front of its head show, the same on every row
   and every map (on the pool maps some rows showed much more than others). The top zombie's head
@@ -57,26 +59,30 @@ Changes in Beta 2
 
 What you need
 -------------
-1. The DLC Edition v2.7.2 exe. The DLC team ships it as patches (xdelta) for your own copy of
-   Plants vs. Zombies (1.0.0.1051, Game of the Year from Steam, or the EA app version).
-   Patch your PlantsVsZombies.exe with DeltaPatcher as the DLC team's guide explains.
-   The result is a single exe of about 213 MB. Any file name is fine.
+1. Your own Plants vs. Zombies (Game of the Year 1.0.0.1051, from Steam or the EA app, or the original)
+   and the DLC team's DLC Edition v2.7.2 download, with its patches (Steam Patch.xdelta, EA Patch.xdelta,
+   OG Patch.xdelta). The port applies the patch itself: DeltaPatcher isn't needed. Your PlantsVsZombies.exe is
+   in your Plants vs. Zombies folder (Steam: right-click the game > Manage > Browse local files).
+   An exe you already patched with DeltaPatcher works too (about 213 MB, any file name).
 2. A Switch running custom firmware with the Homebrew Menu.
-3. About 450 MB free on the SD card: the exe, plus about 230 MB that the first launch unpacks from it.
+3. About 650 MB free on the SD card while installing: the patch and your exe, the DLC Edition exe made from them
+   (deleted again), and about 230 MB the first launch unpacks.
 
 
 Installing
 ----------
 1. Copy the switch folder from this zip to the root of your SD card.
    You should now have sd:/switch/pvzdlc/pvzdlc.nro
-2. Put your DLC Edition exe in the same folder: sd:/switch/pvzdlc/
+2. Put your PlantsVsZombies.exe and the DLC's patch for it (or all three patches: the port finds the one that
+   fits) in the same folder: sd:/switch/pvzdlc/. Or an exe you patched with DeltaPatcher instead.
 3. Start the Homebrew Menu with full memory: hold R while you launch any game, then open
    "Plants vs. Zombies: DLC Edition". (The album / applet mode doesn't have enough memory for the game.)
 
-On the first launch the port unpacks the game from your exe (main.pak, dlc_game.exe, bass.dll,
-properties/). This takes a minute; later launches skip it. The port checks the exe is the v2.7.2
-build it was made for, and says so if it isn't. After that the exe isn't needed any more, and you
-can delete it to free space. Keep it if you'd like to be able to unpack again.
+On the first launch the port makes the DLC Edition exe from your PlantsVsZombies.exe and the patch (as
+DeltaPatcher does), then unpacks the game from it (main.pak, dlc_game.exe, bass.dll, properties/). This
+takes a minute; later launches skip it. The port checks the result is the v2.7.2 build it was made for,
+and says so if it isn't. After that the patches and exes aren't needed any more, and you can delete them
+to free space. Keep them if you'd like to be able to unpack again.
 
 Saves are kept in sd:/switch/pvzdlc/userdata/ (user1.dlc ...). Saves from the PC version can be
 copied there.

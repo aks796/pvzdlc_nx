@@ -13,20 +13,23 @@ What you need
 -------------
 1. A 64-bit (arm64) Android phone or handheld on Android 10 or newer, with OpenGL ES 3.0 (any phone from the
    last several years).
-2. The DLC Edition v2.7.2 exe. The DLC team ships it as patches (xdelta) for your own copy of
-   Plants vs. Zombies (1.0.0.1051, Game of the Year from Steam, or the EA app version).
-   Patch your PlantsVsZombies.exe with DeltaPatcher as the DLC team's guide explains.
-   The result is a single exe of about 213 MB. Any file name is fine. Copy it to your device.
-3. About 700 MB free while installing (the app, the exe, and about 230 MB the first launch unpacks from it);
-   about 300 MB after that.
+2. Your own Plants vs. Zombies (Game of the Year 1.0.0.1051, from Steam or the EA app, or the original)
+   and the DLC team's DLC Edition v2.7.2 download, with its patches (Steam Patch.xdelta, EA Patch.xdelta,
+   OG Patch.xdelta). The port applies the patch itself: DeltaPatcher isn't needed. Your PlantsVsZombies.exe is
+   in your Plants vs. Zombies folder (Steam: right-click the game > Manage > Browse local files).
+   An exe you already patched with DeltaPatcher works too (about 213 MB, any file name).
+   Copy the patch and your PlantsVsZombies.exe to your device.
+3. About 750 MB free while installing (the app, the patch and your exe, the DLC Edition exe made from them,
+   and about 230 MB the first launch unpacks); about 300 MB after that.
 
 
 Installing
 ----------
 1. Open PvZ_DLC_Edition_Android_Beta2.4.apk on your device and allow installing apps from the app you opened it
    with, when Android asks. Updates install over it and keep your saves.
-2. Start "PvZ DLC Edition". The first time, tap "Choose the exe" and pick your DLC Edition exe.
-   The game is unpacked from it (a minute or less); after that the exe isn't needed and you can delete it.
+2. Start "PvZ DLC Edition". The first time, tap "Choose the exe or the patch" and pick the DLC's patch for your
+   copy (or an exe you patched yourself), then your PlantsVsZombies.exe. The game is made and unpacked from them
+   (a minute or less); after that those files aren't needed and you can delete them.
 
 The game folder is Android/data/io.github.aks796.pvzdlc/files on your device's storage (on Android 11 and newer,
 most file managers can't open it on the device; connect the device to a computer to see it). Saves are kept in its

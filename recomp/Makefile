@@ -32,7 +32,7 @@ CFLAGS := $(COMMON) -g1 -DRT_PROF -DRT_COUNT
 else
 CFLAGS := $(COMMON) -g1 -DRT_PROF
 endif
-SRC := $(GEN_SRC) $(RT_SRC) host/main_posix.c host/evb_unpack.c host/platform_sdl.c host/gpu_gl.c host/pad_input.c host/game_patches.c host/overlay.c host/wide_art.c host/port_art.c
+SRC := $(GEN_SRC) $(RT_SRC) host/main_posix.c host/evb_unpack.c host/dlc_setup.c host/vcdiff.c host/platform_sdl.c host/gpu_gl.c host/pad_input.c host/game_patches.c host/overlay.c host/wide_art.c host/port_art.c
 # libstdc++ (libopenmpt is C++) linked in, so the Mac app needs no Homebrew GCC
 STDCXX := $(shell $(CC) -print-file-name=libstdc++.a)
 SDL_CFLAGS := $(shell sdl2-config --cflags)
@@ -46,7 +46,7 @@ CXX := $(DKA)g++
 AR := $(DKA)gcc-ar
 ARCH := -march=armv8-a+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIE
 CFLAGS := $(ARCH) -D__SWITCH__ -I$(LIBNX)/include $(COMMON) -g -DRT_PROF
-SRC := $(GEN_SRC) $(RT_SRC) host/main_switch.c host/evb_unpack.c host/platform_switch.c host/pad_input.c host/game_patches.c host/overlay.c host/wide_art.c host/port_art.c host/gpu_dk.c host/saltynx.c
+SRC := $(GEN_SRC) $(RT_SRC) host/main_switch.c host/evb_unpack.c host/dlc_setup.c host/vcdiff.c host/platform_switch.c host/pad_input.c host/game_patches.c host/overlay.c host/wide_art.c host/port_art.c host/gpu_dk.c host/saltynx.c
 # libopenmpt from its own source list (its makefile assumes a desktop OS); flags as its makefile uses
 OMPT_LIB := $(BUILD)/libopenmpt.a
 OMPT_SRC := $(shell cat third_party/libopenmpt_sources.txt)
@@ -63,7 +63,7 @@ CXX := $(NDKBIN)/aarch64-linux-android29-clang++
 AR := $(NDKBIN)/llvm-ar
 SDL2_SRC ?= $(TOOLCHAIN)/SDL2-2.32.10
 CFLAGS := -fPIC $(COMMON) -g1
-SRC := $(GEN_SRC) $(RT_SRC) host/main_posix.c host/evb_unpack.c host/android_jni.c host/platform_sdl.c host/gpu_gl.c host/pad_input.c host/game_patches.c host/overlay.c host/wide_art.c host/port_art.c
+SRC := $(GEN_SRC) $(RT_SRC) host/main_posix.c host/evb_unpack.c host/dlc_setup.c host/vcdiff.c host/android_jni.c host/platform_sdl.c host/gpu_gl.c host/pad_input.c host/game_patches.c host/overlay.c host/wide_art.c host/port_art.c
 SDL_CFLAGS := -I$(SDL2_SRC)/include
 OMPT_LIB := $(BUILD)/libopenmpt.a
 OMPT_SRC := $(shell cat third_party/libopenmpt_sources.txt)
@@ -80,7 +80,7 @@ AR := $(MINGW)/bin/x86_64-w64-mingw32-ar
 WINDRES := $(MINGW)/bin/x86_64-w64-mingw32-windres
 SDL2_WIN ?= $(TOOLCHAIN)/SDL2-2.32.10/x86_64-w64-mingw32
 CFLAGS := $(COMMON) -g1 -D_WIN32_WINNT=0x0A00 -DWIN32_LEAN_AND_MEAN
-SRC := $(GEN_SRC) $(RT_SRC) host/main_posix.c host/evb_unpack.c host/platform_sdl.c host/gpu_gl.c host/pad_input.c host/game_patches.c host/overlay.c host/wide_art.c host/port_art.c
+SRC := $(GEN_SRC) $(RT_SRC) host/main_posix.c host/evb_unpack.c host/dlc_setup.c host/vcdiff.c host/platform_sdl.c host/gpu_gl.c host/pad_input.c host/game_patches.c host/overlay.c host/wide_art.c host/port_art.c
 SDL_CFLAGS := -I$(SDL2_WIN)/include/SDL2
 OMPT_LIB := $(BUILD)/libopenmpt.a
 OMPT_SRC := $(shell cat third_party/libopenmpt_sources.txt)
@@ -106,7 +106,7 @@ CXX := $(XP)g++
 AR := $(XP)ar
 SDLP ?= $(BUILD)/sdl/prefix
 CFLAGS := $(COMMON) -g1 -D_GNU_SOURCE $(GL_DEFS)
-SRC := $(GEN_SRC) $(RT_SRC) host/main_posix.c host/evb_unpack.c host/platform_sdl.c host/gpu_gl.c host/pad_input.c host/game_patches.c host/overlay.c host/wide_art.c host/port_art.c
+SRC := $(GEN_SRC) $(RT_SRC) host/main_posix.c host/evb_unpack.c host/dlc_setup.c host/vcdiff.c host/platform_sdl.c host/gpu_gl.c host/pad_input.c host/game_patches.c host/overlay.c host/wide_art.c host/port_art.c
 SDL_CFLAGS := -I$(SDLP)/include/SDL2 -D_REENTRANT
 OMPT_LIB := $(BUILD)/libopenmpt.a
 OMPT_SRC := $(shell cat third_party/libopenmpt_sources.txt)

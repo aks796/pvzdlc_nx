@@ -17,7 +17,7 @@
 
 #include "rt.h"
 #include "saltynx.h"
-#include "evb_unpack.h"
+#include "dlc_setup.h"
 
 #define GAME_DIR "sdmc:/switch/pvzdlc"
 
@@ -141,28 +141,18 @@ int main(int argc, char **argv)
         return 1;
     }
     if (stat(GAME_DIR "/dlc_game.exe", &st) != 0 || stat(GAME_DIR "/main.pak", &st) != 0) {
-        /* the first launch: the DLC Edition's exe (the biggest .exe here, whatever its name) unpacked */
-        char exe[300] = "", err[256];
-        long long best = 0;
-        DIR *d = opendir(GAME_DIR);
-        struct dirent *e;
-        while (d && (e = readdir(d))) {
-            size_t n = strlen(e->d_name);
-            if (n < 5 || strcasecmp(e->d_name + n - 4, ".exe") || !strcasecmp(e->d_name, "dlc_game.exe")) continue;
-            char p[300];
-            snprintf(p, sizeof p, "%s/%s", GAME_DIR, e->d_name);
-            if (stat(p, &st) == 0 && (long long)st.st_size > best) best = (long long)st.st_size, snprintf(exe, sizeof exe, "%s", p);
-        }
-        if (d) closedir(d);
-        if (!exe[0]) {
-            fail("%s", "Put the Plants vs. Zombies: DLC Edition 2.7.2 exe (made with the DLC's\n"
-                       "  patch from your own copy of PvZ) in " GAME_DIR "/ next to pvzdlc.nro.");
+        /* the first launch: the DLC Edition's exe (the biggest .exe here, whatever its name), or the DLC's patch and
+         * the PvZ exe it is for, made into it here (dlc_setup.c), unpacked */
+        char err[400];
+        rt_log("[boot] first launch: looking in %s\n", GAME_DIR);
+        int r = dlc_setup_from_dir(GAME_DIR, "", rt_boot_progress, err, sizeof err);
+        if (r == 1) {
+            fail("%s", "Put the Plants vs. Zombies: DLC Edition 2.7.2 exe in " GAME_DIR "/ next to pvzdlc.nro,\n"
+                       "  or the DLC's patch (Steam / EA / OG Patch.xdelta) and your own PlantsVsZombies.exe.");
             return 1;
         }
-        rt_log("[boot] unpacking %s\n", exe);
-        rt_boot_progress("Unpacking the game (first launch only)", 0);
-        if (evb_unpack(exe, GAME_DIR, rt_boot_progress, err, sizeof err)) {
-            rt_log("[boot] unpacking failed: %s\n", err);
+        if (r) {
+            rt_log("[boot] first launch failed: %s\n", err);
             fail("%s", err);
             return 1;
         }

@@ -12,10 +12,11 @@ This package contains no game files. You need your own DLC Edition exe.
 What you need
 -------------
 1. A Mac with Apple Silicon (M1 or newer) on macOS 14 Sonoma or newer.
-2. The DLC Edition v2.7.2 exe. The DLC team ships it as patches (xdelta) for your own copy of
-   Plants vs. Zombies (1.0.0.1051, Game of the Year from Steam, or the EA app version).
-   Patch your PlantsVsZombies.exe with DeltaPatcher as the DLC team's guide explains.
-   The result is a single exe of about 213 MB. Any file name is fine.
+2. Your own Plants vs. Zombies (Game of the Year 1.0.0.1051, from Steam or the EA app, or the original)
+   and the DLC team's DLC Edition v2.7.2 download, with its patches (Steam Patch.xdelta, EA Patch.xdelta,
+   OG Patch.xdelta). The port applies the patch itself: DeltaPatcher isn't needed. Your PlantsVsZombies.exe is
+   in your Plants vs. Zombies folder (Steam: right-click the game > Manage > Browse local files).
+   An exe you already patched with DeltaPatcher works too (about 213 MB, any file name).
 3. About 450 MB free: the game unpacks about 230 MB from the exe on the first launch.
 
 
@@ -25,12 +26,13 @@ Installing
 2. The app isn't from an identified developer, so the first time macOS won't open it with a double-click:
    right-click (or Control-click) it and choose Open, then Open again. If macOS only offers to move it to the
    Bin, open System Settings > Privacy & Security, scroll down, and click "Open Anyway" next to the app's name.
-3. On the first launch the app asks for your DLC Edition exe and unpacks the game from it (a few seconds).
-   After that the exe isn't needed any more.
+3. On the first launch the app asks for the DLC's patch for your copy (or an exe you patched yourself) and then
+   your PlantsVsZombies.exe, makes the game from them and unpacks it (a few seconds). After that those files
+   aren't needed any more.
 
 The game folder is ~/Library/Application Support/Plants vs. Zombies DLC Edition
-(in Finder: Go > Go to Folder..., then paste that). Instead of choosing the exe you can also put it in that
-folder before the first launch. Saves are kept in its userdata/ folder (user1.dlc ...); saves from the PC
+(in Finder: Go > Go to Folder..., then paste that). Instead of choosing them you can also put the patch and your
+PlantsVsZombies.exe in that folder before the first launch. Saves are kept in its userdata/ folder (user1.dlc ...); saves from the PC
 version can be copied there.
 
 

@@ -12,10 +12,11 @@ This package contains no game files. You need your own DLC Edition exe.
 What you need
 -------------
 1. A 64-bit Windows 10 or 11 PC with OpenGL 3.2 graphics drivers (any graphics card or chip from the last ten years).
-2. The DLC Edition v2.7.2 exe. The DLC team ships it as patches (xdelta) for your own copy of
-   Plants vs. Zombies (1.0.0.1051, Game of the Year from Steam, or the EA app version).
-   Patch your PlantsVsZombies.exe with DeltaPatcher as the DLC team's guide explains.
-   The result is a single exe of about 213 MB. Any file name is fine.
+2. Your own Plants vs. Zombies (Game of the Year 1.0.0.1051, from Steam or the EA app, or the original)
+   and the DLC team's DLC Edition v2.7.2 download, with its patches (Steam Patch.xdelta, EA Patch.xdelta,
+   OG Patch.xdelta). The port applies the patch itself: DeltaPatcher isn't needed. Your PlantsVsZombies.exe is
+   in your Plants vs. Zombies folder (Steam: right-click the game > Manage > Browse local files).
+   An exe you already patched with DeltaPatcher works too (about 213 MB, any file name).
 3. About 500 MB free: the game unpacks about 230 MB from the exe on the first launch.
 
 
@@ -23,10 +24,11 @@ Installing
 ----------
 1. Unzip the "Plants vs. Zombies DLC Edition" folder somewhere you can write to (your Documents or Desktop, not
    Program Files: the game keeps its files and saves in this folder).
-2. Copy your DLC Edition exe into that folder (or choose it when the game asks).
+2. Copy your PlantsVsZombies.exe and the DLC's patch for it (or all three patches: the game finds the one that
+   fits) into that folder, or choose them when the game asks. An exe you patched with DeltaPatcher works too.
 3. Start "PvZ DLC Edition.exe". The app isn't signed, so Windows may show "Windows protected your PC": click
-   More info, then Run anyway. The first launch unpacks the game from your exe (a few seconds); after that the exe
-   isn't needed any more.
+   More info, then Run anyway. The first launch makes the game from your exe and the patch and unpacks it (a few
+   seconds); after that those files aren't needed any more.
 
 Saves are kept in the folder's userdata/ folder (user1.dlc ...); saves from the PC version can be copied there.
 This is a separate copy of the game: your normal DLC Edition install isn't touched.
