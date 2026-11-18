@@ -624,7 +624,7 @@ static void open_window(void)
         return;
     }
     if (!soft) {
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(RT_GLES)
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
@@ -646,9 +646,10 @@ static void open_window(void)
             SDL_GL_MakeCurrent(win, glc);
             gpu_gl_init();
             use_gl = 1;
-#if defined(__ANDROID__) || defined(_WIN32)
-            /* Android and Windows: one context, presenting from the game thread (EGL won't have the window's
-             * surface current on two threads at once, as the Mac's presenter thread does; WGL drivers differ on it) */
+#if defined(__ANDROID__) || defined(_WIN32) || defined(__linux__)
+            /* Android, Windows and Linux: one context, presenting from the game thread (EGL won't have the window's
+             * surface current on two threads at once, as the Mac's presenter thread does; WGL and GLX drivers differ
+             * on it) */
             SDL_GL_SetSwapInterval(1);
             return;
 #endif

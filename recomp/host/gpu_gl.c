@@ -9,12 +9,17 @@
  * final present to the window flips.
  * OpenGL ES has no BGRA pixel formats: there textures keep R, G, B, A in their own order, and the game's B, G, R, A
  * pixels are swapped on the way in and out (tex_upload / tex_download). */
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(RT_GLES)
+#define GPU_GLES 1 /* (Android; Linux on ARM, which mostly has OpenGL ES only: make TARGET=linux-arm64) */
+#endif
+#ifdef GPU_GLES
 #include <GLES3/gl3.h>
 #define GLSL "#version 300 es\nprecision highp float;\nprecision highp int;\nprecision highp sampler2D;\n"
 #define PIX_FORMAT GL_RGBA, GL_UNSIGNED_BYTE
-#elif defined(_WIN32)
-/* Windows: opengl32.dll has only OpenGL 1.1; the rest comes from the driver once there is a context (gl_load) */
+#elif defined(_WIN32) || defined(__linux__)
+/* Windows: opengl32.dll has only OpenGL 1.1; the rest comes from the driver once there is a context (gl_load).
+ * Linux the same way (libGL's newer functions through SDL from whichever driver the context is on) */
+#define GPU_GL_LOADER 1
 #include <SDL.h>
 #include <GL/gl.h>
 #include <GL/glext.h>
@@ -209,7 +214,7 @@ static GLuint program(const char *vs, const char *fs, int attribs)
         glBindAttribLocation(p, 1, "a_uv");
         glBindAttribLocation(p, 2, "a_col");
     }
-#ifndef __ANDROID__
+#ifndef GPU_GLES
     glBindFragDataLocation(p, 0, "o");
 #endif
     glLinkProgram(p);
@@ -330,7 +335,7 @@ static void tex_free(GpuTex *t)
     free_list = t;
     pthread_mutex_unlock(&free_lock);
 }
-#ifdef __ANDROID__
+#ifdef GPU_GLES
 /* B, G, R, A <-> R, G, B, A, rows of w pixels pitch bytes apart */
 static void swap_rb(uint8_t *dst, const uint8_t *src, uint32_t w, uint32_t h, uint32_t dpitch, uint32_t spitch)
 {
@@ -349,7 +354,7 @@ static size_t swap_cap;
 static void tex_upload(GpuTex *t, const void *pixels, uint32_t pitch)
 {
     if (qn && (qstate.tex == t || qstate.target == t)) flush();
-#ifdef __ANDROID__
+#ifdef GPU_GLES
     size_t need = (size_t)t->w * t->h * 4;
     if (need > swap_cap) {
         free(swap_buf);
@@ -373,7 +378,7 @@ static void tex_download(GpuTex *t, void *pixels, uint32_t pitch)
     glPixelStorei(GL_PACK_ROW_LENGTH, (GLint)(pitch / 4));
     glReadPixels(0, 0, (GLsizei)t->w, (GLsizei)t->h, PIX_FORMAT, pixels);
     glPixelStorei(GL_PACK_ROW_LENGTH, 0);
-#ifdef __ANDROID__
+#ifdef GPU_GLES
     swap_rb(pixels, pixels, t->w, t->h, pitch, pitch);
 #endif
 }
@@ -408,7 +413,7 @@ static const GpuBackend backend = {"OpenGL", tex_new, tex_free, tex_upload, tex_
 /* The context is current on this thread (the platform made it) */
 void gpu_gl_init(void)
 {
-#ifdef _WIN32
+#ifdef GPU_GL_LOADER
     gl_load();
 #endif
     gl_thread = pthread_self();

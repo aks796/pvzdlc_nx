@@ -5,6 +5,7 @@
 #   make TARGET=host -j8  # macOS test build: build/host/pvzdlc_host (-O1, call trace on)
 #   make TARGET=play -j8  # macOS build to play: build/play/pvzdlc_host (-O2, no call trace); the Mac app: ../tools/package_mac.sh
 #   make TARGET=android -j8  # Android arm64: build/android/libmain.so (NDK r27d; ../tools/build_android.sh makes the APK)
+#   make TARGET=linux -j8    # Linux x86_64 / TARGET=linux-arm64: build/linux*/pvzdlc (in Docker: ../tools/build_linux.sh)
 TARGET ?= a64
 PY ?= python3
 # the downloaded toolchains (NDK dmg, SDL2 2.32.10 source + its mingw files, llvm-mingw): any folder, e.g. make TOOLCHAIN=...
@@ -87,6 +88,33 @@ OMPT_OBJ := $(patsubst %,$(BUILD)/ompt/%.o,$(OMPT_SRC))
 OMPT_FLAGS := -DLIBOPENMPT_BUILD -DMPT_WITH_MINIMP3 -DMPT_WITH_MINIZ \
               -DMPT_WITH_STBVORBIS -DSTB_VORBIS_NO_PULLDATA_API -DSTB_VORBIS_NO_STDIO -I$(OMPT) -I$(OMPT)/common \
               -I$(OMPT)/include -I$(OMPT)/src -O2 -ffunction-sections -fdata-sections -w
+else ifneq ($(filter linux linux-arm64,$(TARGET)),)
+# Linux, built in the Docker image of ../tools/linux (Debian 11: glibc 2.31, as Steam's own runtime; GCC 10):
+# x86_64 by its cross GCC (desktop OpenGL 3.2, as the Mac), arm64 by its own GCC with OpenGL ES 3.0 (RT_GLES: ARM
+# Linux devices mostly have only that), SDL2 2.32.10 built from source beside it (../tools/build_linux.sh)
+ifeq ($(TARGET),linux)
+XP := x86_64-linux-gnu-
+GL_LIBS := -lGL
+GL_DEFS :=
+else
+XP :=
+GL_LIBS := -lGLESv2
+GL_DEFS := -DRT_GLES
+endif
+CC := $(XP)gcc
+CXX := $(XP)g++
+AR := $(XP)ar
+SDLP ?= $(BUILD)/sdl/prefix
+CFLAGS := $(COMMON) -g1 -D_GNU_SOURCE $(GL_DEFS)
+SRC := $(GEN_SRC) $(RT_SRC) host/main_posix.c host/evb_unpack.c host/platform_sdl.c host/gpu_gl.c host/pad_input.c host/game_patches.c host/overlay.c host/wide_art.c host/port_art.c
+SDL_CFLAGS := -I$(SDLP)/include/SDL2 -D_REENTRANT
+OMPT_LIB := $(BUILD)/libopenmpt.a
+OMPT_SRC := $(shell cat third_party/libopenmpt_sources.txt)
+OMPT_OBJ := $(patsubst %,$(BUILD)/ompt/%.o,$(OMPT_SRC))
+OMPT_STD := c++17
+OMPT_FLAGS := -DLIBOPENMPT_BUILD -DMPT_WITH_MINIMP3 -DMPT_WITH_MINIZ \
+              -DMPT_WITH_STBVORBIS -DSTB_VORBIS_NO_PULLDATA_API -DSTB_VORBIS_NO_STDIO -I$(OMPT) -I$(OMPT)/common \
+              -I$(OMPT)/include -I$(OMPT)/src -O2 -ffunction-sections -fdata-sections -w
 else
 CC := clang
 CFLAGS := --target=armv8a-none-eabi -mcpu=cortex-a57 -mfloat-abi=softfp -mfpu=neon-fp-armv8 -fPIE \
@@ -108,11 +136,12 @@ $(BUILD)/platform_sdl.o $(BUILD)/main_posix.o $(BUILD)/gpu_gl.o: CFLAGS += $(SDL
 $(BUILD)/gpu_gl.o: CFLAGS += -DGL_SILENCE_DEPRECATION
 $(BUILD)/rt_vorbis.o: CFLAGS += -w
 
-ifneq ($(filter a64 android win64,$(TARGET)),)
+OMPT_STD ?= c++23
+ifneq ($(filter a64 android win64 linux linux-arm64,$(TARGET)),)
 $(BUILD)/ompt/%.cpp.o: $(OMPT)/%.cpp
 	@mkdir -p $(dir $@)
 	@echo "CXX $<"
-	@$(CXX) $(OMPT_FLAGS) -std=c++23 -fexceptions -frtti -c $< -o $@
+	@$(CXX) $(OMPT_FLAGS) -std=$(OMPT_STD) -fexceptions -frtti -c $< -o $@
 $(BUILD)/ompt/%.c.o: $(OMPT)/%.c
 	@mkdir -p $(dir $@)
 	@echo "CC $<"
@@ -148,6 +177,7 @@ SHADER_OBJ := $(BUILD)/shaders.o
 endif
 
 WIN_RES := $(if $(filter win64,$(TARGET)),host/win/pvzdlc.rc host/win/pvzdlc.ico host/win/pvzdlc.manifest)
+WIN_RES += $(if $(filter a64,$(TARGET)),nx/icon.jpg)
 $(BUILD)/check.txt: $(OBJ) $(OMPT_LIB) $(SHADER_OBJ) $(WIN_RES)
 ifneq ($(filter host play count,$(TARGET)),)
 	@$(CC) -o $(BUILD)/pvzdlc_host $(OBJ) $(OMPT_LIB) $(STDCXX) -lpthread $(SDL_LIBS) -framework OpenGL -framework Foundation -lobjc
@@ -170,6 +200,12 @@ else ifeq ($(TARGET),win64)
 	@$(CXX) -o $(BUILD)/pvzdlc.exe -mwindows -static -Wl,--gc-sections $(OBJ) $(BUILD)/pvzdlc_res.o $(OMPT_LIB) \
 	    -L$(SDL2_WIN)/lib -lmingw32 -lSDL2main $(SDL2_WIN)/lib/libSDL2.dll.a -lopengl32 -lcomdlg32 -lshell32 -lpthread
 	@echo "built $(BUILD)/pvzdlc.exe" > $@
+	@cat $@
+else ifneq ($(filter linux linux-arm64,$(TARGET)),)
+	@# (the C++ runtime linked in; SDL2 beside it in lib/, found through the program's own folder)
+	@$(CXX) -o $(BUILD)/pvzdlc -Wl,--gc-sections -Wl,-rpath,'$$ORIGIN/lib' $(OBJ) $(OMPT_LIB) -L$(SDLP)/lib -lSDL2 \
+	    $(GL_LIBS) -lpthread -ldl -lm -static-libstdc++ -static-libgcc
+	@echo "built $(BUILD)/pvzdlc" > $@
 	@cat $@
 else ifeq ($(TARGET),android)
 	@# (libc++ linked in ahead of SDL2, whose libSDL2.so exports a copy of its own: the game keeps one C++ runtime)

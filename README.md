@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="recomp/nx/icon.jpg" alt="Plants vs. Zombies: DLC Edition" width="160">
+<img src="icons/pc_icon.png" alt="PvZ DLC" width="160">
 
 # Plants vs. Zombies: DLC Edition
 
@@ -59,7 +59,8 @@ and EA's art, or made from it). Both come from your side:
    `cd recomp && make gen PY=python3` (writes `recomp/gen/`, about 180 MB of C).
 3. **libopenmpt 0.8.9** (the MO3 music): unpack `libopenmpt-0.8.9+release.makefile.tar.gz` from
    [lib.openmpt.org](https://lib.openmpt.org/libopenmpt/download/) into `recomp/third_party/libopenmpt`.
-4. **The pictures.** Unzip the release's `PvZ_DLC_Edition_Art` zip at the top of the repository (it gives
+4. **The pictures.** The icons are in `icons/` (the Switch's is `recomp/nx/icon.jpg`, made from `icons/switch.png`).
+   Unzip the release's `PvZ_DLC_Edition_Art` zip at the top of the repository (it gives
    `port_art/` and `gamedata/wide/`), then `cd recomp && python3 tools/embed_art.py ../port_art host/port_art.c`.
 5. **Build** (in `recomp/`):
 

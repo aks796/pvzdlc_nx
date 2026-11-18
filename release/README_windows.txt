@@ -65,6 +65,9 @@ Zen Garden
 Versus: a controller plays as its player's keyboard keys (set that player to the keyboard in the Multiplayer screen):
 the first controller is player 1, the second player 2.
 
+Steam (Big Picture, a controller on the TV): add "PvZ DLC Edition.exe" to Steam as a non-Steam game; cover.png is a library
+picture for it (in Steam: right-click the game > Manage > Set custom artwork).
+
 Full screen: F11.
 
 Options (empty files in the game's folder)

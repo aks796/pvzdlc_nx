@@ -19,6 +19,7 @@
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
 #endif
+#include <unistd.h>
 #ifdef _WIN32
 #include <fcntl.h>
 #include <locale.h>
@@ -87,7 +88,7 @@ static int exists(const char *dir, const char *name)
 }
 
 #ifndef __ANDROID__
-static char own_exe[260]; /* (Windows: the app's own exe, never the DLC's) */
+static char own_exe[260]; /* (Windows, Linux: the app's own program, never the DLC's exe) */
 /* the biggest .exe in dir (the player's DLC Edition exe, any name), "" none */
 static void find_exe(const char *dir, char *out, size_t cap)
 {
@@ -138,6 +139,21 @@ static void choose_exe(char *out, size_t cap)
     out[0] = 0;
     if (GetOpenFileNameW(&o)) WideCharToMultiByte(CP_UTF8, 0, file, -1, out, (int)cap, NULL, NULL);
 }
+#elif defined(__linux__)
+/* the desktop's file chooser: zenity (GNOME, SteamOS) or kdialog (KDE); "" if cancelled or neither is there */
+static void choose_exe(char *out, size_t cap)
+{
+    out[0] = 0;
+    FILE *f = popen("if command -v zenity >/dev/null 2>&1; then zenity --file-selection --title='Choose your Plants vs. "
+                    "Zombies: DLC Edition exe (v2.7.2)' --file-filter='Programs | *.exe *.EXE' --file-filter='All files | *'; "
+                    "elif command -v kdialog >/dev/null 2>&1; then kdialog --title 'Choose your Plants vs. Zombies: DLC "
+                    "Edition exe (v2.7.2)' --getopenfilename \"$HOME\" '*.exe *.EXE'; fi 2>/dev/null",
+                    "r");
+    if (!f) return;
+    if (!fgets(out, (int)cap, f)) out[0] = 0;
+    pclose(f);
+    out[strcspn(out, "\r\n")] = 0;
+}
 #endif
 
 /* The app's game folder and pictures, and the first launch's unpacking. 0 when the game can start. */
@@ -155,6 +171,17 @@ static int app_setup(void)
     *slash = 0;
     snprintf(own_exe, sizeof own_exe, "%s", slash + 1);
     snprintf(rt_game_dir, sizeof rt_game_dir, "%s", self);
+#elif defined(__linux__)
+    /* the app's own folder, as on Windows: the program, its wide/ and lib/, and the game once unpacked */
+    char self[PATH_MAX];
+    ssize_t len = readlink("/proc/self/exe", self, sizeof self - 1);
+    if (len <= 0) return -1;
+    self[len] = 0;
+    char *slash = strrchr(self, '/');
+    if (!slash) return -1;
+    *slash = 0;
+    snprintf(own_exe, sizeof own_exe, "%s", slash + 1);
+    snprintf(rt_game_dir, sizeof rt_game_dir, "%s", self);
 #else
     const char *home = getenv("HOME");
     if (!home) return -1;
@@ -164,6 +191,11 @@ static int app_setup(void)
     rt_window_title = "Plants vs. Zombies: DLC Edition";
     extern int pad_desktop;
     pad_desktop = 1; /* (the PC game's own mouse and keyboard play first: pad_input.c) */
+#ifdef __linux__
+    /* a Steam Deck (Steam sets SteamDeck=1 for what it starts there): the controller plays first, as on the Switch */
+    const char *deck = getenv("SteamDeck");
+    if (deck && strcmp(deck, "0")) pad_desktop = 0;
+#endif
 #ifdef __APPLE__
     /* Contents/MacOS/<exe> -> Contents/Resources (wide/), unless the game folder has its own wide/ (testing art) */
     char self[PATH_MAX], real[PATH_MAX];
@@ -185,7 +217,7 @@ static int app_setup(void)
     /* the first launch: the DLC Edition exe, put in the game folder or picked */
     char exe[PATH_MAX];
     find_exe(rt_game_dir, exe, sizeof exe);
-#if defined(__APPLE__) || defined(_WIN32)
+#if defined(__APPLE__) || defined(_WIN32) || defined(__linux__)
     if (!exe[0]) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, APP_NAME,
                                  "Choose your Plants vs. Zombies: DLC Edition v2.7.2 exe (the one the DLC team's patch "

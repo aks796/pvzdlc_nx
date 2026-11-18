@@ -50,10 +50,10 @@ fi
 
 rm -rf "$W"
 mkdir -p "$W/resin" "$W/gen" "$W/classes" "$W/dex" "$W/assets" "$W/native/lib/arm64-v8a"
-# the icon: the Switch's picture at each launcher size
+# the icon: icons/mobile.png (the user's phone icon) at each launcher size
 for d in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
     mkdir -p "$W/resin/mipmap-${d%%:*}"
-    magick "$ROOT/recomp/nx/icon.jpg" -resize "${d##*:}x${d##*:}" "$W/resin/mipmap-${d%%:*}/ic_launcher.png"
+    magick "$ROOT/icons/mobile.png" -resize "${d##*:}x${d##*:}" "$W/resin/mipmap-${d%%:*}/ic_launcher.png"
 done
 rsync -a --exclude .DS_Store --exclude '*.off' "$ROOT/gamedata/wide/" "$W/assets/wide/"
 

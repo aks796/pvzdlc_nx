@@ -2,7 +2,7 @@
 # Builds the Mac app from the play build (recomp/build/play/pvzdlc_host, `make TARGET=play`):
 #   release/mac/Plants vs. Zombies DLC Edition.app  and  release/PvZ_DLC_Edition_Mac_<version>.zip
 # The app holds the game code, SDL2 (Homebrew's, its install name pointed into the app), the port's pictures
-# (gamedata/wide) and the Switch icon, rounded. It is signed ad hoc (Apple Silicon runs nothing unsigned); it has no
+# (gamedata/wide) and its icon (icons/pc_icon.png). It is signed ad hoc (Apple Silicon runs nothing unsigned); it has no
 # developer ID, so the README tells players how to open it the first time.
 #   tools/package_mac.sh "Beta 2.4"
 set -euo pipefail
@@ -29,15 +29,17 @@ if otool -L "$APP/Contents/MacOS/pvzdlc" | grep -q /opt/homebrew; then echo "sti
 
 rsync -a --exclude .DS_Store --exclude '*.off' "$ROOT/gamedata/wide/" "$APP/Contents/Resources/wide/"
 
-# the icon: the Switch's 256 x 256 picture on the macOS grid (824 of 1024, corners rounded)
+# the icon: icons/pc_icon.png (the user's round PvZ DLC badge, 256 x 256) on the macOS grid (824 of 1024), at the sizes
+# it has (Finder scales the 256 one up for larger views)
 ICONSET="$TMP/icon.iconset"
 mkdir -p "$ICONSET"
-magick "$ROOT/recomp/nx/icon.jpg" -resize 824x824 \
-    \( -size 824x824 xc:none -fill white -draw "roundrectangle 0,0 823,823 185,185" \) -compose DstIn -composite \
-    -background none -gravity center -extent 1024x1024 "$TMP/icon1024.png"
-for s in 16 32 128 256 512; do
-    magick "$TMP/icon1024.png" -resize ${s}x${s} "$ICONSET/icon_${s}x${s}.png"
-    magick "$TMP/icon1024.png" -resize $((s * 2))x$((s * 2)) "$ICONSET/icon_${s}x${s}@2x.png"
+for s in 16 32 128 256; do
+    c=$((s * 824 / 1024))
+    magick "$ROOT/icons/pc_icon.png" -resize ${c}x${c} -background none -gravity center -extent ${s}x${s} "$ICONSET/icon_${s}x${s}.png"
+    if [ $s -le 128 ]; then
+        magick "$ROOT/icons/pc_icon.png" -resize $((c * 2))x$((c * 2)) -background none -gravity center \
+            -extent $((s * 2))x$((s * 2)) "$ICONSET/icon_${s}x${s}@2x.png"
+    fi
 done
 iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/icon.icns"
 
@@ -69,8 +71,9 @@ if strings -a "$APP/Contents/MacOS/pvzdlc" "$APP/Contents/Frameworks/libSDL2-2.0
 mkdir -p "$OUT"
 cp "$ROOT/release/README_mac.txt" "$OUT/README.txt"
 cp -R "$ROOT/release/stage/licenses" "$OUT/"
+cp "$ROOT/icons/pc_cover.png" "$OUT/cover.png"  # (a Steam library picture: README_mac.txt)
 ZIP="$ROOT/release/PvZ_DLC_Edition_Mac_$(echo "$VERSION" | tr -d ' ').zip"
 rm -f "$ZIP"
-(cd "$OUT" && ditto -c -k --norsrc --keepParent "$APPNAME.app" "$TMP/app.zip" && zip -q -X -r "$TMP/app.zip" README.txt licenses -x '*.DS_Store')
+(cd "$OUT" && ditto -c -k --norsrc --keepParent "$APPNAME.app" "$TMP/app.zip" && zip -q -X -r "$TMP/app.zip" README.txt licenses cover.png -x '*.DS_Store')
 mv "$TMP/app.zip" "$ZIP"
 echo "built $ZIP"

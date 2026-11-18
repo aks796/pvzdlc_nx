@@ -19,6 +19,7 @@ cp "$TC/SDL2-2.32.10/x86_64-w64-mingw32/bin/SDL2.dll" "$D/"
 rsync -a --exclude .DS_Store --exclude '*.off' "$ROOT/gamedata/wide/" "$D/wide/"
 cp "$ROOT/release/README_windows.txt" "$D/README.txt"
 cp -R "$ROOT/release/stage/licenses" "$D/"
+cp "$ROOT/icons/pc_cover.png" "$D/cover.png"  # (a Steam library picture: README_windows.txt)
 find "$D" -name .DS_Store -delete
 if strings -a "$D/PvZ DLC Edition.exe" "$D/SDL2.dll" | grep -q "$HOME"; then echo "the app names $HOME"; exit 1; fi
 ZIP="$ROOT/release/PvZ_DLC_Edition_Windows_$(echo "$VERSION" | tr -d ' ').zip"

@@ -3,6 +3,7 @@
 #
 # github_repo/.git (the published history) always stays: only the other top-level entries are deleted and written
 # again. What goes in (the port's own code and its scripts, nothing made from the game's exe or its files):
+#   icons/    the app icons and the Steam library cover
 #   recomp/   Makefile, host/ (not port_art.c: the pictures as C arrays), runtime/, nx/icon.jpg,
 #             tools/x86recomp (the recompiler) and embed_art.py, third_party/ stb_image.h, stb_vorbis/ and
 #             libopenmpt_sources.txt (libopenmpt itself is downloaded: README, "Building")
@@ -42,6 +43,12 @@ cp -p "$ROOT"/tools/*.sh "$ROOT"/tools/*.py "$OUT/tools/"
 # (not the analysis tools: recover_dlc.py rebuilds the DLC's files from its patches without the game, dlc_save.py
 # writes a finished save; neither is needed to build)
 rm -f "$OUT/tools/recover_dlc.py" "$OUT/tools/dlc_save.py"
+# (nor the Linux build's scripts until it is built and tested: tools/linux/, build_linux.sh, package_linux.sh)
+rm -f "$OUT/tools/build_linux.sh" "$OUT/tools/package_linux.sh"
+
+# the icons (the user's art): the Android launcher (mobile.png), the Mac / Windows icon (pc_icon.png), the Switch's
+# source (switch.png -> recomp/nx/icon.jpg), the Steam library cover (pc_cover.png)
+rsync -a --exclude='.DS_Store' "$ROOT/icons" "$OUT/"
 
 mkdir -p "$OUT/release/stage"
 cp -p "$ROOT"/release/README.txt "$ROOT"/release/README_mac.txt "$ROOT"/release/README_windows.txt \
