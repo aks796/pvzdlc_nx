@@ -657,6 +657,11 @@ void game_hook_credits_max(CPU *c)
     g_wr32(c->ebx + 0x400, u);
 }
 
+/* Board::DrawShovel has the shovel slot's rect from Board::GetShovelButtonRect (0x73c8e4, [ebp+0x34]: x, y, w, h):
+ * versus draws it in the wide screen's corner, off the lawn mower (pad_input.c pad_shovel_rect) */
+extern void pad_shovel_rect(uint32_t rect);
+void game_hook_shovel_rect(CPU *c) { pad_shovel_rect(c->ebp + 0x34); }
+
 /* ImitaterDialog::Draw has drawn its cards (ebp = the Graphics), its tooltip next: the controller's bracket */
 extern void pad_imitater_drawn(uint32_t g);
 void game_hook_imit_drawn(CPU *c) { pad_imitater_drawn(c->ebp); }

@@ -4071,9 +4071,38 @@ static void versus_menu_press(void)
     if (!mb) return;
     press_hold(PB_PLUS, (float)(int32_t)g_rd32(mb + 8) + (float)(int32_t)g_rd32(mb + 0x10) / 2, (float)(int32_t)(g_rd32(mb + 0xc) + g_rd32(mb + 0x14)) / 2);
 }
-/* a touch (display point, 1280x720) on the Menu where it is drawn goes to its own place */
+/* Versus: the shovel's slot is at the 4:3 screen's bottom-left corner (Board::GetShovelButtonRect 0x7426b0: x 0,
+ * y 557), over the bottom row's lawn mower in widescreen (user); it is drawn in the wide screen's corner instead,
+ * SHOVEL_DX further left (pad_shovel_rect, from Board::DrawShovel's rect, [ebp+0x34] after its call at 0x73c8e4).
+ * Its place stays the game's own (the game takes clicks only inside 4:3): a touch or click where it is drawn goes
+ * there, and one on its place itself (the lawn's corner cell, the mower) goes just above it, so nothing unseen is
+ * picked up there. Only while the board has just drawn it (not in the draft, the pan, or another mode). */
+#define SHOVEL_DX 133
+static int32_t shovel_rect[4];
+static uint32_t shovel_poll = ~0u;
+void pad_shovel_rect(uint32_t rect)
+{
+    if (!rt_widescreen || !is_versus()) return;
+    for (int k = 0; k < 4; k++) shovel_rect[k] = (int32_t)g_rd32(rect + 4 * (uint32_t)k);
+    g_wr32(rect, (uint32_t)(shovel_rect[0] - SHOVEL_DX));
+    shovel_poll = pad_poll_no;
+}
+static void shovel_redirect(int *x, int *y)
+{
+    if (!rt_widescreen || !is_versus() || shovel_poll == ~0u || pad_poll_no - shovel_poll > 10) return;
+    float gx = ((float)*x - 160.f) / 1.2f, gy = (float)*y / 1.2f;
+    int32_t rx = shovel_rect[0], ry = shovel_rect[1], rw = shovel_rect[2], rh = shovel_rect[3];
+    if (rw <= 0 || rh <= 0 || gy < (float)ry || gy >= (float)(ry + rh)) return;
+    if (gx >= (float)(rx - SHOVEL_DX) && gx < (float)(rx - SHOVEL_DX + rw))
+        *x = (int)(160.f + (gx + SHOVEL_DX) * 1.2f + 0.5f); /* (where it is drawn: its own place) */
+    else if (gx >= (float)rx && gx < (float)(rx + rw))
+        *y = (int)((float)(ry - 1) * 1.2f); /* (its own place: the lawn just above it) */
+}
+
+/* a touch (display point, 1280x720) on the Menu or the versus shovel where it is drawn goes to its own place */
 void pad_touch_redirect(int *x, int *y)
 {
+    shovel_redirect(x, y);
     uint32_t mb = versus_chooser_menu_shown();
     if (!mb || !rt_widescreen) return;
     int32_t w = (int32_t)g_rd32(mb + 0x10), top = (int32_t)g_rd32(mb + 0xc), h = (int32_t)g_rd32(mb + 0x14);

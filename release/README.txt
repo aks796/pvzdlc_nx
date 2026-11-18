@@ -19,6 +19,7 @@ Changes in Beta 2.4
 - Versus: Woods: the tree trunk on the right stands a little further right, so the targets show.
 - Versus: the Menu button of the plant select stays in the top-right corner (off the brains count)
   while the plant select slides in and out too.
+- Versus: the shovel sits in the screen's bottom-left corner, off the bottom row's lawn mower.
 - The DLC's credits roll names the port, after the DLC team.
 
 Changes in Beta 2.3

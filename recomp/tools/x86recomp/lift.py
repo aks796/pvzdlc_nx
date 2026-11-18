@@ -70,6 +70,7 @@ HOOKS = {
     0xa05c60: "game_hook_draw_image_f",     # Graphics::DrawImageF(Image *, x, y)
     0xa050f0: "game_hook_draw_image_src",   # Graphics::DrawImage(Image *, x, y, const Rect &src)
     0x7fd350: "game_hook_window_screen",    # ChallengeScreen::Draw (widescreen: the menu stays in view behind it)
+    0x73c8e4: "game_hook_shovel_rect",      # Board::DrawShovel: its slot's rect from GetShovelButtonRect ([ebp+0x34])
     0x801a33: "game_hook_credits_port",     # ChallengeScreen::Draw, the credits page: its playtesters drawn (edi = g)
     0x80f604: "game_hook_credits_max",      # ChallengeScreen::Update: a page's scroll limit chosen ([esp+8], eax = page)
     0x7ddd60: "game_hook_window_screen",    # AwardScreen::Draw
