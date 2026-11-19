@@ -1,6 +1,6 @@
 #!/bin/bash
 # Builds the Android app (arm64, Android 10+): release/PvZ_DLC_Edition_Android_<version>.apk
-#   tools/build_android.sh "Beta 2.4" 24
+#   tools/build_android.sh "Beta 2.5" 25
 # No Gradle: the SDK's own tools (aapt2, javac, d8, zipalign, apksigner) put together the manifest and Java in
 # android/, SDL2's Java glue, the port's pictures (gamedata/wide -> assets/wide) and the native libraries:
 #   libSDL2.so  SDL 2.32.10 from source (~/sixtyfour/toolchain), its own CMake with the NDK's toolchain file
@@ -9,7 +9,7 @@
 # password is in android/keystore.pass). Never publish either file.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VERSION="${1:?version name, e.g. \"Beta 2.4\"}"
+VERSION="${1:?version name, e.g. \"Beta 2.5\"}"
 CODE="${2:?version code (a whole number that grows with every release)}"
 SDK="$HOME/Library/Android/sdk"
 BT="$SDK/build-tools/34.0.0"

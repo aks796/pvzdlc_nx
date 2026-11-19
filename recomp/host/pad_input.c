@@ -703,6 +703,13 @@ int pad_p2_cursor_hidden(void)
 {
     return p2_touch_on() && !pads_connected[1] && !(p2t.on && p2t.mode == 2);
 }
+/* The DLC's Keybind Hint (its Settings) names keyboard keys: drawn only while the mouse and keyboard play the desktop
+ * apps; a controller's play (and the Switch and Android, with no keyboard to name) has its own button pictures.
+ * The setting itself (LawnApp+0x656, the registry's ShowKeybindHint) is left as the player chose it. */
+int pad_keys_hint_hidden(void)
+{
+    return !(pad_desktop && touch_mode);
+}
 /* finger id going down (kind 0), moving (1) or up (2) at display point x, y; 1 if it is player 2's (the mouse
  * doesn't see it) */
 int pad_touch_finger(int id, int kind, int x, int y)

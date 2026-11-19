@@ -4,10 +4,10 @@
 # The app holds the game code, SDL2 (Homebrew's, its install name pointed into the app), the port's pictures
 # (gamedata/wide) and its icon (icons/pc_icon.png). It is signed ad hoc (Apple Silicon runs nothing unsigned); it has no
 # developer ID, so the README tells players how to open it the first time.
-#   tools/package_mac.sh "Beta 2.4"
+#   tools/package_mac.sh "Beta 2.5"
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VERSION="${1:?version, e.g. \"Beta 2.4\"}"
+VERSION="${1:?version, e.g. \"Beta 2.5\"}"
 APPNAME="Plants vs. Zombies DLC Edition"
 BIN="$ROOT/recomp/build/play/pvzdlc_host"
 SDL="$(readlink -f /opt/homebrew/opt/sdl2/lib/libSDL2-2.0.0.dylib)"

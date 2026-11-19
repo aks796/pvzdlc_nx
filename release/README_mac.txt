@@ -1,4 +1,4 @@
-Plants vs. Zombies: DLC Edition for Mac, Beta 2.4
+Plants vs. Zombies: DLC Edition for Mac, Beta 2.5
 =================================================
 
 A native Mac version of the fan-made Plants vs. Zombies: DLC Edition v2.7.2 for Apple Silicon Macs, made from the
@@ -7,6 +7,14 @@ widescreen; a controller works too (in the style of the Xbox 360 version and PvZ
 
 This is a beta: please report problems (with debug.log from the game folder, see "verbose" below).
 This package contains no game files. You need your own DLC Edition exe.
+
+
+Changes in Beta 2.5
+-------------------
+- The DLC's Keybind Hint (in its Settings) shows each seed packet's key on top of the packet, as on PC (the
+  packets covered the keys). While a controller plays, the keys are hidden and the controller's button pictures
+  show instead; they come back when you use the mouse.
+- Crazy Dave says "click to continue" while the mouse plays, as on PC ("press A" with a controller).
 
 
 What you need
@@ -34,6 +42,9 @@ The game folder is ~/Library/Application Support/Plants vs. Zombies DLC Edition
 (in Finder: Go > Go to Folder..., then paste that). Instead of choosing them you can also put the patch and your
 PlantsVsZombies.exe in that folder before the first launch. Saves are kept in its userdata/ folder (user1.dlc ...); saves from the PC
 version can be copied there.
+
+Updating from an earlier version: replace the app in Applications with the new one (macOS may ask again the first
+time: right-click it and choose Open). The game folder and your saves stay, so nothing is patched or unpacked again.
 
 
 Controls

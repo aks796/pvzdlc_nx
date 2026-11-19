@@ -692,6 +692,10 @@ int game_hook_ai_kb14(CPU *c) { (void)c; return ai_kb(14); }
 /* Versus on one touch screen: player 2's cursor isn't drawn while fingers play (pad_p2_cursor_hidden): Board::Draw's
  * call for it (0x73def9 -> 0x73df05), and SeedBank::Draw's bracket on its packet (the cursors' loop, ecx = the
  * player, 0x9134c0 -> 0x91386c) */
+/* The Keybind Hint's keys (seed bank, shovel, the Menu and speed buttons, the Zen Garden's tools) skipped while a
+ * controller plays (pad_keys_hint_hidden): each check of LawnApp+0x656 goes where the setting is off */
+extern int pad_keys_hint_hidden(void);
+int game_hook_hint_hidden(CPU *c) { (void)c; return pad_keys_hint_hidden(); }
 extern int pad_p2_cursor_hidden(void);
 int game_hook_p2_cursor_draw(CPU *c) { (void)c; return pad_p2_cursor_hidden(); }
 int game_hook_p2_bank_cursor(CPU *c) { return c->ecx == 1 && pad_p2_cursor_hidden(); }

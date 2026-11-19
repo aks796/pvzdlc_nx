@@ -1,4 +1,4 @@
-Plants vs. Zombies: DLC Edition (Nintendo Switch), Beta 2.4
+Plants vs. Zombies: DLC Edition (Nintendo Switch), Beta 2.5
 ===========================================================
 
 A native Switch port of the fan-made Plants vs. Zombies: DLC Edition v2.7.2, with controller play
@@ -6,6 +6,12 @@ A native Switch port of the fan-made Plants vs. Zombies: DLC Edition v2.7.2, wit
 
 This is a beta: please report problems (with sd:/switch/pvzdlc/debug.log, see "verbose" below).
 This package contains no game files. You need your own DLC Edition exe.
+
+
+Changes in Beta 2.5
+-------------------
+- The DLC's Keybind Hint (in its Settings) no longer writes keyboard keys over the seed packets and
+  buttons (the Switch has none to press); the controller's button pictures show as before.
 
 
 Changes in Beta 2.4
@@ -86,6 +92,9 @@ to free space. Keep them if you'd like to be able to unpack again.
 
 Saves are kept in sd:/switch/pvzdlc/userdata/ (user1.dlc ...). Saves from the PC version can be
 copied there.
+
+Updating from an earlier version: copy the new switch folder over the old one (replace
+pvzdlc.nro). Your saves and the unpacked game stay, so nothing is patched or unpacked again.
 
 
 Controls (controller 1; controller 2 is player 2 in versus)

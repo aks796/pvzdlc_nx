@@ -62,6 +62,11 @@ HOOKS = {
     0x7371f9: "game_hook_light_x",         # ... edi = the mouse's x
     0x73def9: ("game_hook_p2_cursor_draw", 0x73df05),  # Board::Draw: player 2's cursor (versus on one touch screen)
     0x9134c0: ("game_hook_p2_bank_cursor", 0x91386c),  # SeedBank::Draw: a keyboard cursor's packet and bracket
+    0x913044: ("game_hook_hint_hidden", 0x913172),  # SeedBank::Draw: the Keybind Hint's keys (none while a controller plays)
+    0x73cb8f: ("game_hook_hint_hidden", 0x73cc84),  # Board::DrawShovel: the shovel's key
+    0x73ceaa: ("game_hook_hint_hidden", 0x73cf7e),  # the button drawn by 0x73ce60: its key
+    0x73d0a7: ("game_hook_hint_hidden", 0x73d1a8),  # Board::DrawTopRightUI: the Menu and speed buttons' keys
+    0x73f037: ("game_hook_hint_hidden", 0x73f2a1),  # the Zen Garden tools' keys (0x73ead0)
     0x73711b: "game_hook_light_pan",       # ... the opening pan: its Graphics back on the screen (widescreen pan too)
     0x82c735: ("game_hook_title_bg", 0x82c799),  # TitleScreen::Draw's background (widescreen: zoomed + light)
     0x821120: "game_hook_menu_draw",        # GameSelector::Draw (widescreen: the menu's matrix draws are its pieces)

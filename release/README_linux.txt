@@ -1,4 +1,4 @@
-Plants vs. Zombies: DLC Edition for Linux (widescreen and controller), Beta 2.4
+Plants vs. Zombies: DLC Edition for Linux (widescreen and controller), Beta 2.5
 ===============================================================================
 
 The fan-made Plants vs. Zombies: DLC Edition v2.7.2, native on Linux (no Wine or Proton), in 16:9 widescreen with
@@ -8,6 +8,14 @@ first. It runs from your own DLC Edition exe, which it unpacks once.
 
 This is a beta: please report problems (with debug.log from the game's folder, see "verbose" below).
 This package contains no game files. You need your own DLC Edition exe.
+
+
+Changes in Beta 2.5
+-------------------
+- The DLC's Keybind Hint (in its Settings) shows each seed packet's key on top of the packet, as on PC (the
+  packets covered the keys). While a controller plays, the keys are hidden and the controller's button pictures
+  show instead; they come back when you use the mouse.
+- Crazy Dave says "click to continue" while the mouse plays, as on PC ("press A" with a controller).
 
 
 What you need
@@ -43,6 +51,9 @@ Non-Steam Game to My Library > Browse). Put the patch and your exe in the folder
 cover.png in the folder is a library picture for it (in Steam: right-click the game > Properties > the picture, or
 Manage > Set custom artwork). In Game Mode the Deck's controls are player 1, as on the Switch, and its touch screen
 works as the mouse.
+
+Updating from an earlier version: extract the new version over the old folder and replace the files. Your saves
+and the unpacked game stay, so nothing is patched or unpacked again.
 
 
 Controls

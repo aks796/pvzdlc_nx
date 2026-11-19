@@ -1,4 +1,4 @@
-Plants vs. Zombies: DLC Edition for Windows (widescreen and controller), Beta 2.4
+Plants vs. Zombies: DLC Edition for Windows (widescreen and controller), Beta 2.5
 =================================================================================
 
 The fan-made Plants vs. Zombies: DLC Edition v2.7.2 in 16:9 widescreen with controller support, made from the
@@ -7,6 +7,14 @@ the Xbox 360 version and PvZ Touch). It runs from your own DLC Edition exe, whic
 
 This is a beta: please report problems (with debug.log from the game's folder, see "verbose" below).
 This package contains no game files. You need your own DLC Edition exe.
+
+
+Changes in Beta 2.5
+-------------------
+- The DLC's Keybind Hint (in its Settings) shows each seed packet's key on top of the packet, as on PC (the
+  packets covered the keys). While a controller plays, the keys are hidden and the controller's button pictures
+  show instead; they come back when you use the mouse.
+- Crazy Dave says "click to continue" while the mouse plays, as on PC ("press A" with a controller).
 
 
 What you need
@@ -32,6 +40,9 @@ Installing
 
 Saves are kept in the folder's userdata/ folder (user1.dlc ...); saves from the PC version can be copied there.
 This is a separate copy of the game: your normal DLC Edition install isn't touched.
+
+Updating from an earlier version: unzip the new version over the old folder and replace the files. Your saves and
+the unpacked game stay, so nothing is patched or unpacked again.
 
 
 Controls

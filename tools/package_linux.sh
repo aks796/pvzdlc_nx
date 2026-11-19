@@ -4,10 +4,10 @@
 #   program (pvzdlc, debug info stripped), lib/libSDL2-2.0.so.0 (found through the program's own folder), the
 #   port's pictures (wide/), README.txt, licenses/, pvzdlc.png (the icon) and cover.png (a Steam library picture).
 #   The game unpacks next to them on the first launch (main_posix.c). A tar keeps the program's execute bit.
-#   tools/package_linux.sh "Beta 2.4" x86_64
+#   tools/package_linux.sh "Beta 2.5" x86_64
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VERSION="${1:?version, e.g. \"Beta 2.4\"}"
+VERSION="${1:?version, e.g. \"Beta 2.5\"}"
 ARCH="${2:?x86_64 or arm64}"
 case "$ARCH" in x86_64) T=linux ;; arm64) T=linux-arm64 ;; *) echo "x86_64 or arm64"; exit 1 ;; esac
 TC="${TOOLCHAIN:-$HOME/sixtyfour/toolchain}"  # (TOOLCHAIN=... for another folder)
