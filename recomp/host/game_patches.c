@@ -776,3 +776,21 @@ void game_hook_nextgarden_drawn(CPU *c)
 /* GameSelector's overlay: one of Adventure's level digits (TodDrawImageCelF's args at esp): 1 = drawn popping */
 extern int pad_level_digit_draw(uint32_t args);
 int game_hook_lvlnum_cel(CPU *c) { return pad_level_digit_draw(c->esp); }
+
+/* 3D acceleration always on (the DLC's Options, "3D Acceleration"). Off, the game draws in software into plain
+ * memory and presents an 800x600 software display, which the Switch's deko3d renderer doesn't show: it kept the
+ * last picture it had on the GPU (a player's photo, 2026-11-20: the shop's key tag over the whole screen, upside
+ * down), and the port's widescreen art and effects are made for the 3D path on every platform. So:
+ * SexyAppBase::Set3DAcclerated (0xa9ba50, thiscall: bool is3D, bool reinit) always gets is3D = true (unticking the
+ * box changes nothing; it shows ticked again next time), and the registry's Is3D as read at start (0xa95345 loads
+ * it into cl, tested at 0xa9534b) is taken as true, so a saved "off" is undone at the next start. */
+void game_hook_force_3d_set(CPU *c)
+{
+    g_wr32(c->esp + 4, (g_rd32(c->esp + 4) & ~0xffu) | 1u);
+}
+
+void game_hook_force_3d_read(CPU *c)
+{
+    c->ecx = (c->ecx & ~0xffu) | 1u;
+    *(uint8_t *)G2H(c->ebp - 0x145) = 1;
+}

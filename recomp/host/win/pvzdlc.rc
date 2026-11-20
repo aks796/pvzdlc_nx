@@ -3,18 +3,18 @@
 1 ICON "pvzdlc.ico"
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "pvzdlc.manifest"
 1 VERSIONINFO
-FILEVERSION 0,2,5,1
-PRODUCTVERSION 0,2,5,1
+FILEVERSION 0,2,5,2
+PRODUCTVERSION 0,2,5,2
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
     BLOCK "040904b0"
     BEGIN
       VALUE "FileDescription", "Plants vs. Zombies: DLC Edition"
-      VALUE "ProductName", "Plants vs. Zombies: DLC Edition (Beta 2.5.1)"
+      VALUE "ProductName", "Plants vs. Zombies: DLC Edition (Beta 2.5.2)"
       VALUE "CompanyName", "aks796"
-      VALUE "FileVersion", "Beta 2.5.1"
-      VALUE "ProductVersion", "Beta 2.5.1"
+      VALUE "FileVersion", "Beta 2.5.2"
+      VALUE "ProductVersion", "Beta 2.5.2"
     END
   END
   BLOCK "VarFileInfo"

@@ -1,4 +1,4 @@
-Plants vs. Zombies: DLC Edition for Android, Beta 2.5.1
+Plants vs. Zombies: DLC Edition for Android, Beta 2.5.2
 =======================================================
 
 A native Android version of the fan-made Plants vs. Zombies: DLC Edition v2.7.2, made from the Switch port. It plays
@@ -7,6 +7,12 @@ the Xbox 360 version and PvZ Touch). Versus can be played by two people on one s
 
 This is a beta, and the first Android build: please report problems (with debug.log, see "Bug reports" below).
 This package contains no game files. You need your own DLC Edition exe.
+
+
+Changes in Beta 2.5.2
+---------------------
+- Options: 3D Acceleration stays on (the port is made for the game's 3D drawing; turned off, the Switch version
+  showed a wrong, stretched picture). A saved "off" is switched back on at the next start.
 
 
 Changes in Beta 2.5.1
@@ -41,7 +47,7 @@ What you need
 
 Installing
 ----------
-1. Open PvZ_DLC_Edition_Android_Beta2.5.1.apk on your device and allow installing apps from the app you opened it
+1. Open PvZ_DLC_Edition_Android_Beta2.5.2.apk on your device and allow installing apps from the app you opened it
    with, when Android asks. Updates install over it and keep your saves.
 2. Start "PvZ DLC Edition". The first time, tap "Choose the exe or the patch" and pick the DLC's patch for your
    copy (or an exe you patched yourself), then your PlantsVsZombies.exe. The game is made and unpacked from them

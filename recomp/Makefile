@@ -177,7 +177,7 @@ SHADER_OBJ := $(BUILD)/shaders.o
 endif
 
 WIN_RES := $(if $(filter win64,$(TARGET)),host/win/pvzdlc.rc host/win/pvzdlc.ico host/win/pvzdlc.manifest)
-WIN_RES += $(if $(filter a64,$(TARGET)),nx/icon.jpg)
+WIN_RES += $(if $(filter a64,$(TARGET)),nx/icon.jpg Makefile)  # (the NACP's version is in this Makefile: relink when it changes)
 $(BUILD)/check.txt: $(OBJ) $(OMPT_LIB) $(SHADER_OBJ) $(WIN_RES)
 ifneq ($(filter host play count,$(TARGET)),)
 	@$(CC) -o $(BUILD)/pvzdlc_host $(OBJ) $(OMPT_LIB) $(STDCXX) -lpthread $(SDL_LIBS) -framework OpenGL -framework Foundation -lobjc
@@ -186,7 +186,7 @@ ifneq ($(filter host play count,$(TARGET)),)
 else ifeq ($(TARGET),a64)
 	@$(CXX) -specs=$(LIBNX)/switch.specs $(ARCH) -g -Wl,-Map,$(BUILD)/pvzdlc.map -Wl,--gc-sections \
 	    -o $(BUILD)/pvzdlc.elf $(OBJ) $(BUILD)/shaders.o $(OMPT_LIB) -L$(LIBNX)/lib -ldeko3d -lnx -lm
-	@/opt/devkitpro/tools/bin/nacptool --create "Plants vs. Zombies: DLC Edition" "aks796, Samen" "Beta 2.5.1" $(BUILD)/pvzdlc.nacp >/dev/null
+	@/opt/devkitpro/tools/bin/nacptool --create "Plants vs. Zombies: DLC Edition" "aks796, Samen" "Beta 2.5.2" $(BUILD)/pvzdlc.nacp >/dev/null
 	@# the port's pictures (../gamedata/wide: HenryJk's widescreen art, GPL-3, PvZ Touch's bushes and the port's own) in the NRO's romfs
 	@mkdir -p $(BUILD)/romfs/wide
 	@rsync -a --delete --exclude .DS_Store --exclude '*.off' ../gamedata/wide/ $(BUILD)/romfs/wide/

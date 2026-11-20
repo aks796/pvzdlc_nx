@@ -3,10 +3,10 @@
 #   release/PvZ_DLC_Edition_Windows_<version>.zip, one folder "Plants vs. Zombies DLC Edition" holding the app
 #   ("PvZ DLC Edition.exe", debug info stripped), SDL2.dll (2.32.10's mingw build), the port's pictures (wide/),
 #   README.txt and licenses/. The game unpacks next to them on the first launch (main_posix.c).
-#   tools/package_windows.sh "Beta 2.5.1"
+#   tools/package_windows.sh "Beta 2.5.2"
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VERSION="${1:?version, e.g. \"Beta 2.5.1\"}"
+VERSION="${1:?version, e.g. \"Beta 2.5.2\"}"
 TC="${TOOLCHAIN:-$HOME/sixtyfour/toolchain}"  # (TOOLCHAIN=... for another folder)
 STRIP="$TC/llvm-mingw-20261104-ucrt-macos-universal/bin/x86_64-w64-mingw32-strip"
 NAME="Plants vs. Zombies DLC Edition"

@@ -1,4 +1,4 @@
-Plants vs. Zombies: DLC Edition for Mac, Beta 2.5.1
+Plants vs. Zombies: DLC Edition for Mac, Beta 2.5.2
 ===================================================
 
 A native Mac version of the fan-made Plants vs. Zombies: DLC Edition v2.7.2 for Apple Silicon Macs, made from the
@@ -7,6 +7,12 @@ widescreen; a controller works too (in the style of the Xbox 360 version and PvZ
 
 This is a beta: please report problems (with debug.log from the game folder, see "verbose" below).
 This package contains no game files. You need your own DLC Edition exe.
+
+
+Changes in Beta 2.5.2
+---------------------
+- Options: 3D Acceleration stays on (the port is made for the game's 3D drawing; turned off, the Switch version
+  showed a wrong, stretched picture). A saved "off" is switched back on at the next start.
 
 
 Changes in Beta 2.5.1

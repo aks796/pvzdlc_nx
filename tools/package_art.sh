@@ -4,10 +4,10 @@
 #   recomp/tools/embed_art.py) and gamedata/wide/ (the widescreen pictures: HenryJk's PvZWidescreen art, GPL-3.0, its
 #   licence inside; PvZ Touch's bushes; the port's own, made from the game's art by tools/). Unzipped at the top of the
 #   repository it puts both where the build looks.
-#   tools/package_art.sh "Beta 2.5.1"
+#   tools/package_art.sh "Beta 2.5.2"
 set -e
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-VERSION="${1:?version, e.g. \"Beta 2.5.1\"}"
+VERSION="${1:?version, e.g. \"Beta 2.5.2\"}"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 rsync -a --exclude='.DS_Store' "$ROOT/port_art" "$TMP/"

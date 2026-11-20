@@ -1,4 +1,4 @@
-Plants vs. Zombies: DLC Edition (Nintendo Switch), Beta 2.5.1
+Plants vs. Zombies: DLC Edition (Nintendo Switch), Beta 2.5.2
 =============================================================
 
 A native Switch port of the fan-made Plants vs. Zombies: DLC Edition v2.7.2, with controller play
@@ -6,6 +6,13 @@ A native Switch port of the fan-made Plants vs. Zombies: DLC Edition v2.7.2, wit
 
 This is a beta: please report problems (with sd:/switch/pvzdlc/debug.log, see "verbose" below).
 This package contains no game files. You need your own DLC Edition exe.
+
+
+Changes in Beta 2.5.2
+---------------------
+- Options: 3D Acceleration stays on. Unticked, the game drew in software and the screen showed a
+  wrong, stretched picture (a shop tag over the whole screen). It is now always on, and a saved
+  "off" is switched back on at the next start.
 
 
 Changes in Beta 2.5.1
