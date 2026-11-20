@@ -1,11 +1,20 @@
-Plants vs. Zombies: DLC Edition (Nintendo Switch), Beta 2.5
-===========================================================
+Plants vs. Zombies: DLC Edition (Nintendo Switch), Beta 2.5.1
+=============================================================
 
 A native Switch port of the fan-made Plants vs. Zombies: DLC Edition v2.7.2, with controller play
 (in the style of the Xbox 360 version and PvZ Touch), touch screen support and 16:9 widescreen.
 
 This is a beta: please report problems (with sd:/switch/pvzdlc/debug.log, see "verbose" below).
 This package contains no game files. You need your own DLC Edition exe.
+
+
+Changes in Beta 2.5.1
+---------------------
+- Y (fast forward), + (menu) and - (pause) press the keys the game itself is using. After a key was
+  changed in the DLC's Change Keybinds, they still pressed the old one, so Y did nothing (keys named
+  F1, Home, a number-pad key and so on work too).
+- Moon stages: the blood moon's glow is the original's, a soft red glow round the moon (a dark disc
+  sat round it), and its sky no longer shows faint horizontal lines.
 
 
 Changes in Beta 2.5

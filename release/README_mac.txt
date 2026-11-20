@@ -1,5 +1,5 @@
-Plants vs. Zombies: DLC Edition for Mac, Beta 2.5
-=================================================
+Plants vs. Zombies: DLC Edition for Mac, Beta 2.5.1
+===================================================
 
 A native Mac version of the fan-made Plants vs. Zombies: DLC Edition v2.7.2 for Apple Silicon Macs, made from the
 Switch port: no Wine or CrossOver needed. It plays as the PC version does, with the mouse and keyboard, in 16:9
@@ -7,6 +7,15 @@ widescreen; a controller works too (in the style of the Xbox 360 version and PvZ
 
 This is a beta: please report problems (with debug.log from the game folder, see "verbose" below).
 This package contains no game files. You need your own DLC Edition exe.
+
+
+Changes in Beta 2.5.1
+---------------------
+- Y (fast forward), + (menu) and - (pause) on a controller press the keys the game itself is using. After a key was
+  changed in the DLC's Change Keybinds, they still pressed the old one, so Y did nothing (keys named F1, Home, a
+  number-pad key and so on work too).
+- Moon stages: the blood moon's glow is the original's, a soft red glow round the moon (a dark disc sat round it),
+  and its sky no longer shows faint horizontal lines.
 
 
 Changes in Beta 2.5

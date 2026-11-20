@@ -1,5 +1,5 @@
-Plants vs. Zombies: DLC Edition for Android, Beta 2.5
-=====================================================
+Plants vs. Zombies: DLC Edition for Android, Beta 2.5.1
+=======================================================
 
 A native Android version of the fan-made Plants vs. Zombies: DLC Edition v2.7.2, made from the Switch port. It plays
 by touch (the touch screen is the mouse, as on PC) in 16:9 widescreen, and a controller works too (in the style of
@@ -7,6 +7,15 @@ the Xbox 360 version and PvZ Touch). Versus can be played by two people on one s
 
 This is a beta, and the first Android build: please report problems (with debug.log, see "Bug reports" below).
 This package contains no game files. You need your own DLC Edition exe.
+
+
+Changes in Beta 2.5.1
+---------------------
+- Y (fast forward), + (menu) and - (pause) on a controller press the keys the game itself is using. After a key was
+  changed in the DLC's Change Keybinds, they still pressed the old one, so Y did nothing (keys named F1, Home, a
+  number-pad key and so on work too).
+- Moon stages: the blood moon's glow is the original's, a soft red glow round the moon (a dark disc sat round it),
+  and its sky no longer shows faint horizontal lines.
 
 
 Changes in Beta 2.5
@@ -32,7 +41,7 @@ What you need
 
 Installing
 ----------
-1. Open PvZ_DLC_Edition_Android_Beta2.5.apk on your device and allow installing apps from the app you opened it
+1. Open PvZ_DLC_Edition_Android_Beta2.5.1.apk on your device and allow installing apps from the app you opened it
    with, when Android asks. Updates install over it and keep your saves.
 2. Start "PvZ DLC Edition". The first time, tap "Choose the exe or the patch" and pick the DLC's patch for your
    copy (or an exe you patched yourself), then your PlantsVsZombies.exe. The game is made and unpacked from them

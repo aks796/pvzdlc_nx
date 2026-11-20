@@ -54,16 +54,39 @@ static uint32_t pkeys[2][9] = {
 static uint32_t hotkeys[14] = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'X', 0x1B, 0x20, 'C'};
 enum { HK_SHOVEL = 10, HK_MENU, HK_PAUSE, HK_SPEED };
 
+/* A key's name in the save (KBLO / P1KE / P2KE) to its key code, as the DLC's own Sexy::GetKeyCodeFromName
+ * (0xa589e0) does it: one character is its own code ('0'..'Z', lower case as upper case; '['..'`' + 0x80, the OEM
+ * keys), a longer name (10 characters at most) is looked up in its table (0xdd4850, Windows' key names), anything
+ * else is 0. All of the table, so a key bound to F1, a number pad key, HOME, BACK ... in the DLC's settings is
+ * pressed too (Y fast forward did nothing when the speed-up key had such a name). */
 static uint32_t vk_of_name(const char *n)
 {
-    static const struct { const char *name; uint32_t vk; } named[] = {
-        {"SPACE", 0x20}, {"RETURN", 0x0D}, {"ENTER", 0x0D}, {"ESCAPE", 0x1B}, {"TAB", 0x09}, {"BACKSPACE", 0x08},
-        {"SHIFT", 0x10}, {"CONTROL", 0x11}, {"CTRL", 0x11}, {"ALT", 0x12}, {"LEFT", 0x25}, {"UP", 0x26},
-        {"RIGHT", 0x27}, {"DOWN", 0x28},
+    static const struct { const char *name; uint8_t vk; } named[] = {
+        {"UNKNOWN", 0}, {"LBUTTON", 1}, {"RBUTTON", 2}, {"CANCEL", 3}, {"MBUTTON", 4}, {"BACK", 8}, {"TAB", 9},
+        {"CLEAR", 12}, {"RETURN", 13}, {"SHIFT", 16}, {"CONTROL", 17}, {"MENU", 18}, {"PAUSE", 19}, {"CAPITAL", 20},
+        {"KANA", 21}, {"HANGEUL", 21}, {"HANGUL", 21}, {"JUNJA", 23}, {"FINAL", 24}, {"HANJA", 25}, {"KANJI", 25},
+        {"ESCAPE", 27}, {"CONVERT", 28}, {"NONCONVERT", 29}, {"ACCEPT", 30}, {"MODECHANGE", 31}, {"SPACE", 32},
+        {"PRIOR", 33}, {"NEXT", 34}, {"END", 35}, {"HOME", 36}, {"LEFT", 37}, {"UP", 38}, {"RIGHT", 39},
+        {"DOWN", 40}, {"SELECT", 41}, {"PRINT", 42}, {"EXECUTE", 43}, {"SNAPSHOT", 44}, {"INSERT", 45},
+        {"DELETE", 46}, {"HELP", 47}, {"LWIN", 91}, {"RWIN", 92}, {"APPS", 93}, {"MULTIPLY", 106}, {"ADD", 107},
+        {"SEPARATOR", 108}, {"SUBTRACT", 109}, {"DECIMAL", 110}, {"DIVIDE", 111}, {"NUMLOCK", 144}, {"SCROLL", 145},
     };
-    if (n[0] && !n[1]) return (uint32_t)(n[0] >= 'a' && n[0] <= 'z' ? n[0] - 32 : n[0]);
+    char up[16];
+    size_t len = strlen(n);
+    if (len >= 11) return 0;
+    for (size_t i = 0; i <= len; i++) up[i] = (char)(n[i] >= 'a' && n[i] <= 'z' ? n[i] - 32 : n[i]);
+    if (len == 1) {
+        unsigned char ch = (unsigned char)up[0];
+        if (ch >= '0' && ch <= 'Z') return ch;
+        if (ch >= '[' && ch <= '`') return ch + 0x80u;
+    }
+    if (!strncmp(up, "NUMPAD", 6) && up[6] >= '0' && up[6] <= '9' && !up[7]) return 96u + (uint32_t)(up[6] - '0');
+    if (up[0] == 'F' && up[1] >= '1' && up[1] <= '9') { /* F1 .. F24 */
+        int f = atoi(up + 1);
+        if (f >= 1 && f <= 24 && strlen(up) == (f >= 10 ? 3u : 2u)) return 111u + (uint32_t)f;
+    }
     for (unsigned i = 0; i < sizeof named / sizeof *named; i++)
-        if (!strcmp(n, named[i].name)) return named[i].vk;
+        if (!strcmp(up, named[i].name)) return named[i].vk;
     return 0;
 }
 
@@ -141,6 +164,29 @@ static uint32_t player_info(void)
     uint32_t app = rt_app_object();
     uint32_t p = valid(app) ? g_rd32(app + 0x848) : 0;
     return valid(p) ? p : 0;
+}
+/* The key the game itself listens for, by its hotkey number (KBLO: seed slots 1-10, shovel, menu, pause, speed up).
+ * Board::KeyDown (0x749300) names the pressed key (Sexy::GetKeyNameFromCode, 0xa58b30) and compares that with
+ * PlayerInfo's hotkey names (+0x5b4c, a std::string each 0x1c on), which the DLC's Change Keybinds sets. It doesn't
+ * take them from the save as it loads (a save saying V, F5 or HOME still had C there), so the save's KBLO (hotkeys)
+ * can be out of step: a player who changed the speed-up key had Y press the old one ("Y no longer works"). The
+ * game's own names first; the save's only when they can't be read. */
+static uint32_t game_hotkey(int i)
+{
+    uint32_t pi = player_info();
+    if (pi) {
+        /* (this build's std::string: debug proxy +0, 16-byte buffer +4 or a pointer there, size +20, capacity +24) */
+        uint32_t s = pi + 0x5b4c + 0x1c * (uint32_t)i, n = g_rd32(s + 20), cap = g_rd32(s + 24);
+        uint32_t p = cap >= 16 ? g_rd32(s + 4) : s + 4;
+        if (n > 0 && n < 16 && cap >= n && cap < 4096 && (cap < 16 || valid(p))) {
+            char name[16];
+            memcpy(name, G2H(p), n);
+            name[n] = 0;
+            uint32_t vk = vk_of_name(name);
+            if (vk) return vk;
+        }
+    }
+    return hotkeys[i];
 }
 /* a touch at display point x, y started on the shovel's button (touch drag and drop) */
 static int zen_tools;
@@ -3606,7 +3652,7 @@ static void menu_update(const PadIn *p, float dt)
     if (down & PB_PLUS) {
         /* the Menu button wherever a level shows one (plant select, versus); Escape elsewhere */
         if (board() && !top_dialog()) press_hold(PB_PLUS, 737.f, 14.f);
-        else tap(hotkeys[HK_MENU]);
+        else tap(game_hotkey(HK_MENU));
     }
     if (rt_verbose && (down & (PB_A | PB_B)))
         rt_log("[pad] menu %s: %d spots, focus %s \"%s\"\n", (down & PB_A) ? "A" : "B", n_spots,
@@ -4717,20 +4763,20 @@ void pad_input_update(const PadIn pads[2], float dt)
             }
             if (pressed & PB_PLUS) {
                 /* versus has no Escape for its menu: the Menu button itself */
-                if (solo) tap(hotkeys[HK_MENU]);
+                if (solo) tap(game_hotkey(HK_MENU));
                 else if (versus_chooser_menu()) versus_menu_press();
                 else versus_button_press(0, PB_PLUS);
             }
             if (!solo && (pressed & PB_MINUS)) versus_button_press(1, PB_MINUS); /* the next one (pause / flag) */
             if (solo && p == 0) {
                 int mode = game_mode(), last_stand = mode == 38 || mode == 184;
-                if ((pressed & PB_Y) && !last_stand) tap(hotkeys[HK_SPEED]); /* fast forward (Y, as in PvZ Touch's mod) */
+                if ((pressed & PB_Y) && !last_stand) tap(game_hotkey(HK_SPEED)); /* fast forward (Y, as in PvZ Touch's mod) */
                 /* Last Stand: Y presses Start / Continue Onslaught (Challenge::LastStandUpdate's stone button,
                  * 300,559 210x46 or 270,559 257x46), as PvZ Touch */
                 if ((pressed & PB_Y) && last_stand) press_hold(PB_Y, 405.f, 582.f);
                 x_action(b & PB_X, pressed & PB_X, mode);
                 flash_look_update(&pads[0], lvl_on[0] || (pads[0].connected && (pads[0].buttons & (PB_UP | PB_DOWN | PB_LEFT | PB_RIGHT))), dt);
-                if (pressed & PB_MINUS) tap(hotkeys[HK_PAUSE]);
+                if (pressed & PB_MINUS) tap(game_hotkey(HK_PAUSE));
                 dig_update(b & PB_B, dt);
             }
             if (!solo) dig_update_p(p, (b & PB_B) && !b_direct[p] && !bank_is_zombie(p), dt);
