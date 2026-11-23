@@ -104,6 +104,7 @@ HOOKS = {
     0x9e2022: "game_hook_graphics_made",    # Graphics::Graphics(Image *) stored its clip (edi = this)
     0xa00ea0: "game_hook_cliprect_in",      # Graphics::ClipRect(x, y, w, h) (widescreen)
     0xa00ef1: "game_hook_cliprect_out",     # ... its intersection stored (esi = &mClipRect)
+    0xa2e4a0: "game_hook_setcliprect_out",  # Graphics::SetClipRect(x, y, w, h) stored its clip (edi = this)
     0xa0b4b0: "game_hook_fillrect",         # Graphics::FillRect(x, y, w, h) (widescreen)
     0x792990: "game_hook_kbcursor_draw",    # the keyboard player's cursor is drawn (g at [esp+4])
     0x793483: "game_hook_kbcursor_drawn",   # ... done (g at [ebp+0xd0])

@@ -1,4 +1,4 @@
-Plants vs. Zombies: DLC Edition (Nintendo Switch), Beta 2.5.2
+Plants vs. Zombies: DLC Edition (Nintendo Switch), Beta 2.5.3
 =============================================================
 
 A native Switch port of the fan-made Plants vs. Zombies: DLC Edition v2.7.2, with controller play
@@ -6,6 +6,25 @@ A native Switch port of the fan-made Plants vs. Zombies: DLC Edition v2.7.2, wit
 
 This is a beta: please report problems (with sd:/switch/pvzdlc/debug.log, see "verbose" below).
 This package contains no game files. You need your own DLC Edition exe.
+
+
+Changes in Beta 2.5.3
+---------------------
+- Versus: Let's Rock shows its button, X (either player), once both sides have chosen their plants
+  and zombies.
+- Versus: + opens the menu during a match (the pause button by the clock; it did nothing before).
+- Versus: the shovel shows B (held over a plant, it digs it up).
+- Versus: at the end of a match, move a cursor onto the trophy to go on, as on PC; A also collects
+  it, so nothing is left to touch.
+- Cob Cannon: A on it picks it up, the cursor aims it, A fires and B puts it back (it couldn't be
+  fired with a controller).
+- Music: the original tunes' horde drums and hi-hats stay on the beat (they came in off it, at
+  random: they ran at the wrong tempo).
+- Versus: after a match, the Multiplayer screen works with a controller (only touch worked, so it
+  was stuck), its sides show the menu's art (they were white), and Back to Menu there leaves it (it
+  came straight back).
+- Versus: when the zombies win, the gravestones stay on the lawn while the view pans to the house
+  (they were cut off at the old 4:3 edge, then gone).
 
 
 Changes in Beta 2.5.2

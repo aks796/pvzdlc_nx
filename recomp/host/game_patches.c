@@ -468,6 +468,38 @@ void game_hook_cliprect_out(CPU *c)
     g_wr32(clip, (uint32_t)l);
     g_wr32(clip + 8, (uint32_t)(r - l));
 }
+/* Graphics::SetClipRect(x, y, w, h): the asked rect, translated, cut to the destination image (the 800x600 window).
+ * The lawn's objects only: versus gravestones (plants there) set their own clip round them, so when the lawn pans
+ * to the house as the zombies win they were cut at the window's right edge, and gone past it, while the target
+ * zombies beyond them drew on. There the rect is cut to the screen's edges instead. The asked rect is on the stack
+ * (x at [esp+56] here: 48 bytes of locals and edi pushed). */
+extern int wide_objects_pass;
+static void rect_cut(int32_t *x0, int32_t *y0, int32_t *x1, int32_t *y1, int32_t l, int32_t t, int32_t r, int32_t b)
+{
+    if (*x0 < l) *x0 = l;
+    if (*y0 < t) *y0 = t;
+    if (*x1 > r) *x1 = r;
+    if (*y1 > b) *y1 = b;
+    if (*x1 < *x0 || *y1 < *y0) *x0 = *y0 = *x1 = *y1 = 0; /* (Rect::Intersection's empty) */
+}
+void game_hook_setcliprect_out(CPU *c)
+{
+    if (!rt_widescreen || !wide_objects_pass) return;
+    uint32_t g = c->edi;
+    int32_t ax = (int32_t)((float)(int32_t)g_rd32(c->esp + 56) + g_transf(g, 0x08)); /* (as the game: float sum, truncated) */
+    int32_t ay = (int32_t)((float)(int32_t)g_rd32(c->esp + 60) + g_transf(g, 0x0c));
+    int32_t aw = (int32_t)g_rd32(c->esp + 64), ah = (int32_t)g_rd32(c->esp + 68);
+    int32_t x0 = ax, y0 = ay, x1 = ax + aw, y1 = ay + ah;
+    rect_cut(&x0, &y0, &x1, &y1, 0, 0, 800, 600);
+    /* (only a clip cut to the window: one cut to another image is left) */
+    if ((int32_t)g_rd32(g + 0x20) != x0 || (int32_t)g_rd32(g + 0x24) != y0 || (int32_t)g_rd32(g + 0x28) != x1 - x0 ||
+        (int32_t)g_rd32(g + 0x2c) != y1 - y0)
+        return;
+    x0 = ax, y0 = ay, x1 = ax + aw, y1 = ay + ah;
+    rect_cut(&x0, &y0, &x1, &y1, WS_L, 0, WS_R, 600);
+    g_wr32(g + 0x20, (uint32_t)x0), g_wr32(g + 0x24, (uint32_t)y0);
+    g_wr32(g + 0x28, (uint32_t)(x1 - x0)), g_wr32(g + 0x2c, (uint32_t)(y1 - y0));
+}
 void game_hook_fillrect(CPU *c)
 {
     if (!rt_widescreen) return;

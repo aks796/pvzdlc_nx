@@ -1,4 +1,4 @@
-Plants vs. Zombies: DLC Edition for Linux (widescreen and controller), Beta 2.5.2
+Plants vs. Zombies: DLC Edition for Linux (widescreen and controller), Beta 2.5.3
 =================================================================================
 
 The fan-made Plants vs. Zombies: DLC Edition v2.7.2, native on Linux (no Wine or Proton), in 16:9 widescreen with
@@ -8,6 +8,24 @@ first. It runs from your own DLC Edition exe, which it unpacks once.
 
 This is a beta: please report problems (with debug.log from the game's folder, see "verbose" below).
 This package contains no game files. You need your own DLC Edition exe.
+
+
+Changes in Beta 2.5.3
+---------------------
+- Versus with controllers: Let's Rock shows its button, X (either player), once both sides have chosen their plants
+  and zombies.
+- Versus: + opens the menu during a match (the pause button by the clock; it did nothing before).
+- Versus: the shovel shows B (held over a plant, it digs it up).
+- Versus: at the end of a match, move a cursor onto the trophy to go on, as on PC; A also collects it, so nothing is
+  left to touch.
+- Cob Cannon: A on it picks it up, the cursor aims it, A fires and B puts it back with a controller (it couldn't be
+  fired with one).
+- Music: the original tunes' horde drums and hi-hats stay on the beat (they came in off it, at random: they ran at
+  the wrong tempo).
+- Versus: after a match, the Multiplayer screen works with a controller (only touch worked there, so it was stuck),
+  its sides show the menu's art (they were white), and Back to Menu there leaves it (it came straight back).
+- Versus: when the zombies win, the gravestones stay on the lawn while the view pans to the house (they were cut off
+  at the old 4:3 edge, then gone).
 
 
 Changes in Beta 2.5.2

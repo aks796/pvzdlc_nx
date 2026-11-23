@@ -811,14 +811,19 @@ __attribute__((weak)) void rt_frame_begin(void) {}
  * would keep old frames), or, under a 4:3 window screen that replaced the menu (rt_wide_backdrop, set
  * by the host when such a screen drew last frame), with the menu's strips as it was last drawn
  * (kept by rt_wide_keep_strips at the end of each menu frame) */
+/* (two copies: the menu's (rt_wide_menu_drawn / rt_wide_backdrop 1) and a board's (2): a screen opened over a level
+ * (the plant select's Almanac) shows the board's; the Multiplayer screen always the menu's: after a versus match
+ * the board's last strips were the trophy's white-out, white beside the screen it came back to (a tester's photo) */
 int rt_wide_backdrop, rt_wide_menu_drawn;
-static Surf *strips; /* the menu's two strips, side by side */
+static Surf *strips_of[2]; /* the menu's / the board's two strips, side by side */
 void rt_wide_keep_strips(Surf *s)
 {
     if (!rt_wide_menu_drawn || !rt_gpu || !surf_gpu(s)) return;
+    int k = rt_wide_menu_drawn == 2;
     rt_wide_menu_drawn = 0;
     int32_t w = s->ox, r = (int32_t)s->w - s->ox - (int32_t)s->vw;
-    if (!strips) strips = surf_new((uint32_t)(w + r), s->h, 0);
+    if (!strips_of[k]) strips_of[k] = surf_new((uint32_t)(w + r), s->h, 0);
+    Surf *strips = strips_of[k];
     if (!strips || !surf_gpu(strips)) return;
     GpuState st;
     memset(&st, 0, sizeof st);
@@ -837,8 +842,9 @@ void rt_wide_keep_strips(Surf *s)
     rt_gpu->draw(&st, q, 12);
     surf_gpu_wrote(strips);
 }
-static int put_strips(Surf *t)
+static int put_strips(Surf *t, int board)
 {
+    Surf *strips = strips_of[board ? 1 : 0];
     if (!strips || !rt_gpu || !surf_gpu(t) || !surf_gpu(strips)) return 0;
     int32_t w = t->ox, r = (int32_t)t->w - t->ox - (int32_t)t->vw;
     GpuState st;
@@ -863,7 +869,7 @@ static void clear_sides(Surf *t)
 {
     int backdrop = rt_wide_backdrop;
     rt_wide_backdrop = 0;
-    if (backdrop && put_strips(t)) return;
+    if (backdrop && put_strips(t, backdrop == 2)) return;
     int32_t xs[2] = {0, t->ox + (int32_t)t->vw}, ws[2] = {t->ox, (int32_t)t->w - t->ox - (int32_t)t->vw};
     for (int i = 0; i < 2; i++) {
         if (ws[i] <= 0) continue;
@@ -885,7 +891,7 @@ static void clear_sides(Surf *t)
 static Surf *scene_target;
 void rt_wide_backdrop_now(void)
 {
-    if (scene_target && scene_target->ox) put_strips(scene_target);
+    if (scene_target && scene_target->ox) put_strips(scene_target, rt_wide_backdrop == 2);
 }
 HLE(dev_BeginScene)
 {

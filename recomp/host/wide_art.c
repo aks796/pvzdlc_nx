@@ -559,13 +559,19 @@ void game_hook_window_screen(CPU *c)
     if (!rt_widescreen) return;
     /* only when it came up from the menu, or (the Almanac and the lists) from a board: the plant select's
      * Almanac (the award screen after a level is a picture of its own: black beside it) */
-    if (frame_no > last + 2)
+    /* the Multiplayer screen (ChallengeScreen) always over the menu's strips: after a versus match it comes up
+     * from the board (its trophy's white-out), with no menu drawn since */
+    static int over_board;
+    int multiplayer = c->ecx && game_rtti_is(c->ecx, "ChallengeScreen");
+    if (frame_no > last + 2) {
         from_menu = menu_frame + 5 >= frame_no ||
                     (board_frame + 5 >= frame_no && !(c->ecx && game_rtti_is(c->ecx, "AwardScreen")));
+        over_board = !multiplayer && menu_frame + 5 < frame_no;
+    }
     last = frame_no;
-    if (from_menu) {
+    if (from_menu || multiplayer) {
         extern void rt_wide_backdrop_now(void);
-        rt_wide_backdrop = 1;
+        rt_wide_backdrop = over_board ? 2 : 1;
         rt_wide_backdrop_now();
     }
     /* an award screen from the menu (the Multiplayer screen's HELP, the mail) is drawn within the 4:3 window
@@ -791,6 +797,7 @@ static void pole_upto(CPU *c, uint32_t order)
         draw_alpha(c, g_rd32(c->ebp - 0x18), pic(c, &hj_pole_blood), px, 0, 1, blood_alpha > 255 ? 255 : blood_alpha);
 }
 
+int wide_objects_pass; /* Board::DrawGameObjects is drawing its render items (game_hook_setcliprect_out) */
 #define VS_BANK_RIGHT 792 /* the versus seed bank's pane ends here (the brains count; measured) */
 #define REANIM_DRAW 0x9c0700u /* Reanimation::Draw(Graphics *) (Board::DrawGameObjects' reanimation items, type 11) */
 static uint32_t vs_clip_g, vs_clip[4];
@@ -811,7 +818,7 @@ void game_hook_draw_objects_item(CPU *c)
     uint32_t i = c->eax;
     static uint32_t bush_reanims[6];
     if (i == 0) {
-        strip_next = 0, pole_drawn = 0;
+        strip_next = 0, pole_drawn = 0, wide_objects_pass = 1;
         /* our bush reanims this frame */
         uint32_t app = rt_app_object();
         for (int k = 0; k < 6; k++)
@@ -866,6 +873,7 @@ void game_hook_draw_objects_done(CPU *c)
         for (int k = 0; k < 4; k++) g_wr32(vs_clip_g + 0x20 + 4 * (uint32_t)k, vs_clip[k]);
         vs_clip_g = 0;
     }
+    wide_objects_pass = 0;
     strips_upto(c, 0xffffffffu);
     pole_upto(c, 0xffffffffu);
     if (pole_drawn && rt_widescreen) drew = 1; /* (the pole / the Woods' trunk cover the top-right buttons too) */
@@ -881,7 +889,7 @@ void game_hook_draw_objects_done(CPU *c)
     }
     if (rt_widescreen) {
         extern int rt_wide_menu_drawn;
-        rt_wide_menu_drawn = 1; /* the board's strips are whole this frame: kept for a 4:3 screen over it */
+        rt_wide_menu_drawn = 2; /* the board's strips are whole this frame: kept for a 4:3 screen over it */
         board_frame = frame_no;
     }
     drawing_bush = 0;

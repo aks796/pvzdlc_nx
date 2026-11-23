@@ -104,6 +104,19 @@ typedef struct {
      * back, a rewind), which put the drums and hi-hats in the main copy for good: every level played at its
      * horde intensity. They are put back before each block is decoded (BASS keeps them over a jump). */
     float chan_vol[64];
+    /* where the playing row began (module seconds), and the one before: BASS's GetOrderPosition gives the row times
+     * PSCALER plus the part of the row already played; Lawn's Music compares the drums / hi-hats copies with the main
+     * copy by it every frame and nudges their BPM. Whole rows only, they read a row ahead or behind and swung 181 /
+     * 185 BPM all game, a row (~46 ms) apart: the horde's drums came in off the beat (a player: "tweaking"). */
+    int row_order, row_row;
+    double row_start, row_len;
+    /* where it was last put (MAKEMUSICPOS: order, row; -1 by seconds) and the frames played since: a tune's copies
+     * (main, drums, hi-hats) are put at the same place and played one after another, and the mixer could run
+     * between them: a copy then started a block (1024 frames, 23 ms, half a row) behind the main one, for the whole
+     * level, heard once its tracks faded in at a horde (a player: original tunes "tweaking", at random: as the
+     * mixer's timing fell). BASS_ChannelPlay plays a late copy forward to the one already going. */
+    int set_order, set_row;
+    uint64_t played;
 } Music;
 
 static void music_keep_channel_volumes(Music *m)
@@ -113,11 +126,29 @@ static void music_keep_channel_volumes(Music *m)
         if (m->chan_vol[ch] >= 0.f && fabs(m->ia.get_channel_volume(m->ext, ch) - (double)m->chan_vol[ch]) > 1e-4)
             m->ia.set_channel_volume(m->ext, ch, (double)m->chan_vol[ch]);
 }
+/* (in 64-frame steps, noting the time each new row starts: 1.5 ms of a ~46 ms row) */
+static void music_note_row(Music *m)
+{
+    int o = openmpt_module_get_current_order(m->mod), r = openmpt_module_get_current_row(m->mod);
+    if (o == m->row_order && r == m->row_row) return;
+    double t = openmpt_module_get_position_seconds(m->mod);
+    if (o == m->row_order && r == m->row_row + 1 && t > m->row_start) m->row_len = t - m->row_start;
+    m->row_order = o, m->row_row = r, m->row_start = t;
+}
 static int music_decode(void *ud, int16_t *out, int frames)
 {
     Music *m = ud;
     music_keep_channel_volumes(m);
-    return (int)openmpt_module_read_interleaved_stereo(m->mod, RT_AUDIO_RATE, (size_t)frames, out);
+    int done = 0;
+    while (done < frames) {
+        int n = frames - done < 64 ? frames - done : 64;
+        int got = (int)openmpt_module_read_interleaved_stereo(m->mod, RT_AUDIO_RATE, (size_t)n, out + 2 * done);
+        music_note_row(m);
+        done += got;
+        if (got < n) break;
+    }
+    m->played += (uint64_t)done;
+    return done;
 }
 static int music_rewind(void *ud)
 {
@@ -194,6 +225,13 @@ static void apply(int i)
     v->paused = 0;
     rt_audio_unlock();
 }
+/* (RT_BASS_SYNC_LOG: the copies' places, BPM nudges and drift, for the horde music) */
+static int sync_log(void)
+{
+    static int on = -1;
+    if (on < 0) on = getenv("RT_BASS_SYNC_LOG") != NULL;
+    return on;
+}
 static Music *music_of(int i) { return h[i].kind == 1 && h[i].v ? h[i].v->ud : NULL; }
 
 HLE(BASS_ChannelStop)
@@ -218,6 +256,26 @@ HLE(BASS_ChannelPlay)
         }
     }
     if (h[i].v) h[i].v->finished = 0;
+    Music *m = music_of(i);
+    if (m && m->set_order >= 0) { /* a copy put where another started just now: level with it (see Music) */
+        rt_audio_lock();
+        uint64_t ahead = 0;
+        for (int k = 0; k < MAXH; k++) {
+            Music *o = k != i && h[k].playing ? music_of(k) : NULL;
+            if (o && o->set_order == m->set_order && o->set_row == m->set_row && o->played > m->played &&
+                o->played - m->played <= RT_AUDIO_RATE / 2 && o->played - m->played > ahead)
+                ahead = o->played - m->played;
+        }
+        static int16_t scratch[2 * 1024];
+        for (uint64_t left = ahead; left > 0;) {
+            int n = left > 1024 ? 1024 : (int)left;
+            int got = music_decode(m, scratch, n);
+            if (got <= 0) break;
+            left -= (uint64_t)got;
+        }
+        rt_audio_unlock();
+        if (ahead && rt_verbose) rt_log("[bass] music %05x played %u frames forward to its tune's other copy\n", (unsigned)ARG(0), (unsigned)ahead);
+    }
     h[i].playing = 1;
     apply(i);
     RET(2, 1);
@@ -259,11 +317,24 @@ HLE(BASS_ChannelSetPosition)
         if (rt_verbose) rt_log("[bass] music %05x -> order %u row %u\n", (unsigned)ARG(0), (unsigned)(pos & 0xffff),
                                (unsigned)((pos >> 16) & 0x7fff));
         rt_audio_lock();
-        if (pos & 0x80000000u)
+        if (pos & 0x80000000u) {
             openmpt_module_set_position_order_row(m->mod, (int32_t)(pos & 0xffff), (int32_t)((pos >> 16) & 0x7fff));
-        else
+            m->set_order = (int)(pos & 0xffff), m->set_row = (int)((pos >> 16) & 0x7fff);
+        } else {
             openmpt_module_set_position_seconds(m->mod, (double)pos / (RT_AUDIO_RATE * 4.0));
+            m->set_order = m->set_row = -1;
+        }
+        m->played = 0;
         music_keep_channel_volumes(m);
+        /* the row it lands on takes effect now, as BASS's jump does: its tempo / speed commands with it. libopenmpt
+         * applies a row as it plays it, so the tempo read straight after a jump was the module's header one (183):
+         * Lawn's Music reads the main copy's BPM right after it starts a tune and holds the drums / hi-hats copies
+         * at it (BPM nudges every frame), while the main copy played at its tune's own (Grasswalk 115): the copies
+         * raced rows ahead, off the beat once a horde faded them in. One frame played (every copy alike). */
+        {
+            int16_t one[2];
+            music_decode(m, one, 1);
+        }
         if (getenv("RT_BASS_VOL_LOG") && m->has_ia) rt_log("[bassvol] %05x after the jump: chan 29 volume %.2f\n", (unsigned)ARG(0), m->ia.get_channel_volume(m->ext, 29));
         h[i].v->finished = 0;
         rt_audio_unlock();
@@ -492,6 +563,11 @@ HLE(BASS_MusicSetAttribute)
     } else if (m->has_ia) {
         if (a == ATTRIB_BPM) {
             if (m->has_ia3) m->ia3.set_current_tempo2(m->ext, (double)v);
+            if (sync_log()) {
+                static uint32_t last[8];
+                int k = idx(ARG(0)) & 7;
+                if (last[k] != v) last[k] = v, rt_log("[basssync] %05x BPM -> %u\n", (unsigned)ARG(0), (unsigned)v);
+            }
         }
         else if (a == ATTRIB_SPEED) m->ia.set_current_speed(m->ext, (int32_t)v);
         else if (a == ATTRIB_VOL_GLOBAL) m->ia.set_global_volume(m->ext, (double)v / 64.0);
@@ -518,6 +594,38 @@ HLE(BASS_MusicGetOrderPosition)
     rt_audio_lock();
     uint32_t order = (uint32_t)openmpt_module_get_current_order(m->mod);
     uint32_t row = (uint32_t)openmpt_module_get_current_row(m->mod) * m->pscaler;
+    music_note_row(m); /* (a jump since the last block) */
+    if (m->row_len > 0.001) { /* the part of the row already played, in PSCALER steps */
+        double f = (openmpt_module_get_position_seconds(m->mod) - m->row_start) / m->row_len;
+        if (f > 0) row += (uint32_t)(f >= 0.999 ? 0.999 * m->pscaler : f * m->pscaler);
+    }
+    if (sync_log()) { /* (the same moment: this copy's time less the first music's, a drift) */
+        static int mi = -1;
+        if (mi < 0) for (int k = 0; k < MAXH; k++) if (h[k].used && h[k].kind == 1) { mi = k; break; }
+        Music *mm = mi >= 0 ? music_of(mi) : NULL;
+        static unsigned dn;
+        if (mm && mm != m && ++dn % 15 == 0) {
+            double q[2];
+            Music *two[2] = {m, mm};
+            for (int z = 0; z < 2; z++) {
+                Music *x = two[z];
+                music_note_row(x);
+                double f = x->row_len > 0.001 ? (openmpt_module_get_position_seconds(x->mod) - x->row_start) / x->row_len : 0;
+                if (f < 0) f = 0;
+                if (f > 0.999) f = 0.999;
+                q[z] = ((double)openmpt_module_get_current_row(x->mod) + f) * 4; /* (the row part only, as the game compares) */
+            }
+            rt_log("[bassdrift] %05x minus main: %+.2f quarter-rows (tempo %.1f vs %.1f)\n", (unsigned)ARG(0), q[0] - q[1],
+                   openmpt_module_get_current_tempo2(m->mod), openmpt_module_get_current_tempo2(mm->mod));
+        }
+    }
+    if (sync_log()) { /* (diagnostic: each copy's place and time, to see the drums / hi-hats drift) */
+        static unsigned n[8];
+        if (++n[idx(ARG(0)) & 7] % 30 == 0)
+            rt_log("[basssync] %05x order %u row %u sec %.4f tempo %.2f vol29 %.2f\n", (unsigned)ARG(0), order, row / m->pscaler,
+                   openmpt_module_get_position_seconds(m->mod), openmpt_module_get_current_tempo2(m->mod),
+                   m->has_ia ? m->ia.get_channel_volume(m->ext, 25) : -1.0);
+    }
     rt_audio_unlock();
     RET(1, (order & 0xffff) | (row << 16));
 }

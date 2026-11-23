@@ -186,7 +186,7 @@ ifneq ($(filter host play count,$(TARGET)),)
 else ifeq ($(TARGET),a64)
 	@$(CXX) -specs=$(LIBNX)/switch.specs $(ARCH) -g -Wl,-Map,$(BUILD)/pvzdlc.map -Wl,--gc-sections \
 	    -o $(BUILD)/pvzdlc.elf $(OBJ) $(BUILD)/shaders.o $(OMPT_LIB) -L$(LIBNX)/lib -ldeko3d -lnx -lm
-	@/opt/devkitpro/tools/bin/nacptool --create "Plants vs. Zombies: DLC Edition" "aks796, Samen" "Beta 2.5.2" $(BUILD)/pvzdlc.nacp >/dev/null
+	@/opt/devkitpro/tools/bin/nacptool --create "Plants vs. Zombies: DLC Edition" "aks796, Samen" "Beta 2.5.3" $(BUILD)/pvzdlc.nacp >/dev/null
 	@# the port's pictures (../gamedata/wide: HenryJk's widescreen art, GPL-3, PvZ Touch's bushes and the port's own) in the NRO's romfs
 	@mkdir -p $(BUILD)/romfs/wide
 	@rsync -a --delete --exclude .DS_Store --exclude '*.off' ../gamedata/wide/ $(BUILD)/romfs/wide/

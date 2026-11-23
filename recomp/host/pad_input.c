@@ -2975,7 +2975,10 @@ static int from_versus;
 static uint32_t to_multiplayer;
 static void versus_return_step(void)
 {
-    if (board()) from_versus = is_versus();
+    /* (only from a match itself: the game also comes back to Multiplayer by itself at a match's end, still in
+     * versus' game mode, and its Back to Menu then went to the menu and straight back to Multiplayer) */
+    if (screen_kind == SCR_CHALLENGE) from_versus = 0;
+    else if (board()) from_versus = is_versus();
     if (from_versus) quick_armed = 1;
     if (to_multiplayer && (screen_kind != SCR_MENU || screen_obj != to_multiplayer)) to_multiplayer = 0;
     if (!to_multiplayer || g_rd32(to_multiplayer + 0x12c) == 0) return;
@@ -4179,6 +4182,99 @@ static void versus_button_press(int which, uint32_t pb)
     press_hold(pb, x, y);
 }
 
+/* A versus match ends with its trophy on the lawn (coin type 40, 83 x 63, an arrow over it). The game's way is the
+ * players' cursors: one moved onto it collects it, as they collect sun and brains (Mac: the zombies' win, P1's cursor
+ * onto it, then back to Multiplayer). A tester on a docked Switch was left with no way on ("a soft lock ... take the
+ * Switch out of the dock and press it"), so A on either controller also collects it (Coin::Collect, 0x783480, as the
+ * click does), no mark: for a trophy no cursor can reach (a plants' win: it may lie past the lawn's last column).
+ * Only the trophy: the brains (type 28) and sun (4) stay the cursors'. The board's coins: +0xe8 block, +0xec used,
+ * 0xd8 each; +0x58 type, +0x38 dead, +0x50 being collected. */
+#define COIN_VERSUS_TROPHY 40u
+static uint32_t versus_award(void)
+{
+    uint32_t bd = board();
+    if (!bd || !is_versus()) return 0;
+    uint32_t blk = g_rd32(bd + 0xe8), used = g_rd32(bd + 0xec);
+    if (!valid(blk) || used > 1024) return 0;
+    for (uint32_t i = 0; i < used; i++) {
+        uint32_t co = blk + 0xd8 * i;
+        if (g_rd32(co) && !RD8_G(co + 0x38) && !RD8_G(co + 0x50) && g_rd32(co + 0x58) == COIN_VERSUS_TROPHY) return co;
+    }
+    return 0;
+}
+
+/* In a versus match the board's Menu button (a GameButton at Board +0x150: x +8, y +0xc, width +0x10, height
+ * +0x14) is the DLC's pause by the clock at the bottom (325,570 33x33), not a top-right widget: + presses it (it
+ * found none at the top right and did nothing) */
+static int versus_pause_rect(float *x, float *y, float *w, float *h)
+{
+    uint32_t bd = board(), mb = bd ? g_rd32(bd + 0x150) : 0;
+    if (!valid(mb) || !is_versus()) return 0;
+    *x = (float)(int32_t)g_rd32(mb + 8), *y = (float)(int32_t)g_rd32(mb + 0xc);
+    *w = (float)(int32_t)g_rd32(mb + 0x10), *h = (float)(int32_t)g_rd32(mb + 0x14);
+    return *w > 0 && *h > 0 && *w < 200 && *h < 200 && *y > 400;
+}
+
+/* The Cob Cannon: the DLC's keyboard player can't fire one (A plants the chosen packet; a cannon's cells are taken),
+ * so A on a cannon is the mouse's click on it, as the PC fires it (a tester: "you can plant it but you can't select
+ * it"). The game's cursor then aims the cob (Board +0x13c, its type +0x30 = 8, the cob target): the pointer follows
+ * the player's cursor, A fires there (a click), B puts it back (a right click). The cannon is found in the board's
+ * plants (Board +0xb0 block, +0xb4 used, 0x200 each, live while its id at +0x1fc has its high half): type +0x24 = 63
+ * in the DLC (its own numbering: not the original's 47), its left cell's column +0x28 and row +0x1c (it takes that
+ * column and the next), +8 / +0xc / +0x10 / +0x14 its rect. (The cell's own plant, 0x741ff0, is the flower pot on a
+ * roof.) */
+#define SEED_COB_CANNON 63u
+#define CURSOR_COB_TARGET 8u
+static int cob_aim_p = -1; /* the player aiming a cob (-1 none) */
+static uint32_t cob_at_cursor(int p)
+{
+    uint32_t bd = board();
+    float kx, ky;
+    int col, row;
+    if (!bd || !kb_cursor_p(p, &kx, &ky) || !lawn_cell(bd, kx, ky, &col, &row)) return 0;
+    uint32_t blk = g_rd32(bd + 0xb0), used = g_rd32(bd + 0xb4);
+    if (!valid(blk) || used > 1024) return 0;
+    for (uint32_t i = 0; i < used; i++) {
+        uint32_t pl = blk + 0x200 * i;
+        if (!(g_rd32(pl + 0x1fc) >> 16) || g_rd32(pl + 0x24) != SEED_COB_CANNON) continue;
+        int pc = (int32_t)g_rd32(pl + 0x28), pr = (int32_t)g_rd32(pl + 0x1c);
+        if (pr == row && (pc == col || pc + 1 == col)) return pl;
+    }
+    return 0;
+}
+static uint32_t cob_update(int p, uint32_t now, uint32_t was)
+{
+    uint32_t bd = board(), co = bd ? g_rd32(bd + 0x13c) : 0, pressed = now & ~was;
+    float kx, ky;
+    if (!bd || !valid(co) || !kb_cursor_p(p, &kx, &ky)) return 0;
+    if (g_rd32(co + 0x30) == CURSOR_COB_TARGET) {
+        if (cob_aim_p != p) return 0;
+        static float lx, ly;
+        if (kx != lx || ky != ly) raw_mouse(kx, ky, WM_MOUSEMOVE, 0), lx = kx, ly = ky;
+        if (pressed & PB_A) {
+            raw_mouse(kx, ky, WM_LBUTTONDOWN, 1);
+            raw_mouse(kx, ky, WM_LBUTTONUP, 0);
+            rt_log("[pad] cob fired by player %d at %.0f,%.0f\n", p + 1, kx, ky);
+        } else if (pressed & PB_B) {
+            raw_mouse(kx, ky, WM_RBUTTONDOWN, 2);
+            raw_mouse(kx, ky, WM_RBUTTONUP, 0);
+        }
+        return PB_A | PB_B; /* (while aiming they are the cob's, not the keys') */
+    }
+    if (cob_aim_p == p) cob_aim_p = -1;
+    if (!(pressed & PB_A)) return 0;
+    uint32_t pl = cob_at_cursor(p);
+    if (!pl) return 0;
+    float px = (float)(int32_t)g_rd32(pl + 8) + (float)(int32_t)g_rd32(pl + 0x10) / 2;
+    float py = (float)(int32_t)g_rd32(pl + 0xc) + (float)(int32_t)g_rd32(pl + 0x14) / 2;
+    raw_mouse(px, py, WM_MOUSEMOVE, 0);
+    raw_mouse(px, py, WM_LBUTTONDOWN, 1);
+    raw_mouse(px, py, WM_LBUTTONUP, 0);
+    cob_aim_p = p;
+    rt_log("[pad] cob cannon picked by player %d\n", p + 1);
+    return PB_A;
+}
+
 static void level_overlay(int solo)
 {
     if (!solo) {
@@ -4191,6 +4287,12 @@ static void level_overlay(int solo)
             for (int i = 0; i < n && i < 2; i++)
                 badge((float)(int32_t)g_rd32(bt[i] + 0x34), (float)(int32_t)g_rd32(bt[i] + 0x38), (float)(int32_t)g_rd32(bt[i] + 0x3c),
                       (float)(int32_t)g_rd32(bt[i] + 0x40), cel[i]);
+            float px, py, pw, ph;
+            if (!n && versus_pause_rect(&px, &py, &pw, &ph)) /* (the pause by the clock: + above it) */
+                badge_img(HELP_PLUS, px + pw / 2 - 13, py - 27, 26, 26);
+            /* the shovel where it is drawn (the wide screen's corner): B, held over a plant, digs */
+            if (shovel_poll != ~0u && pad_poll_no - shovel_poll <= 10 && rt_widescreen)
+                badge_img(HELP_B, (float)(shovel_rect[0] - SHOVEL_DX + shovel_rect[2]) - 16, (float)(shovel_rect[1] + shovel_rect[3]) - 30, 30, 30);
         }
     }
     if (!solo || touch_mode) return;
@@ -4522,7 +4624,9 @@ void pad_input_update(const PadIn pads[2], float dt)
     if (dialogs < 0 || dialogs > 16) dialogs = 0;
     int playing = !dialogs && board() != 0 && valid(app_) && g_rd32(app_ + 0x818) == 3;
     int zen = 0; /* (the Zen Garden plays with the keyboard player too: zen_keys below) */
-    int in_level = board() != 0, versus = (playing && !zen) || (is_versus() && !dialogs);
+    /* (versus' keyboard players only with its board up: back on the Multiplayer screen after a match the game mode is
+     * still versus, and the controllers stayed keyboard players there, nothing to steer: a tester's soft lock) */
+    int in_level = board() != 0, versus = (playing && !zen) || (is_versus() && !dialogs && in_level && screen_kind != SCR_CHALLENGE);
     {
         /* the DLC's keyboard players, set before any screen creates their cursors: versus = both players;
          * everything else = player 1 alone (NCOP +0x1164 = 0, P1KB +0x5cd4 = 1, TASO +0x5df4 = 1,
@@ -4631,7 +4735,7 @@ void pad_input_update(const PadIn pads[2], float dt)
      * goes off screen while the controller plays, from the level's start (a level begun from a menu by the
      * controller left it mid-screen, its label with it); a touch brings it back (not in the Zen Garden: its
      * pointer rests on the cursor's cell, or on Main Menu / the Shop as they are pressed) */
-    if (playing && !zen && !is_versus() && game_mode() != 50 && game_mode() != 140 && pads[0].connected &&
+    if (playing && !zen && !is_versus() && game_mode() != 50 && game_mode() != 140 && pads[0].connected && cob_aim_p < 0 &&
         (!touch_mode || pads[0].buttons || fabsf(pads[0].lx) > 0.3f || fabsf(pads[0].ly) > 0.3f)) {
         static int parked;
         if (hold_pb) parked = 0; /* (a button being pressed: the pointer rests on it until it is let go) */
@@ -4644,6 +4748,9 @@ void pad_input_update(const PadIn pads[2], float dt)
     }
 
     if (is_versus()) versus_menu_corner();
+    /* the versus draft's Let's Rock (where the campaign's is): X, either player's (their 9th key), once both banks
+     * are full; it had no mark, so players looked for it on the touch screen (a tester, docked) */
+    if (is_versus() && seed_chooser() && !playing && !dialogs) badge(157, 546, 150, 42, HELP_X);
     /* the versus pause menu's Main Menu (button 1) goes back to Multiplayer (versus_return_step): named for it */
     if (screen_kind == SCR_OPTIONS && is_versus() && screen_obj) {
         uint32_t mm = button_with_id(screen_obj, 1);
@@ -4728,6 +4835,19 @@ void pad_input_update(const PadIn pads[2], float dt)
             }
             if (!solo && p == 0 && ai_match && (now & PB_A) && !(was & PB_A) && seed_chooser() && ai_chooser_pick())
                 a_mouse = PB_A;
+            /* versus: the award at the match's end, A from either controller (versus_award) */
+            if (!solo && (now & PB_A) && !(was & PB_A)) {
+                uint32_t aw = versus_award();
+                if (aw) {
+                    guest_this(GAME_FN(0x783480u), aw, 0, NULL); /* Coin::Collect */
+                    rt_log("[pad] versus trophy collected by player %d's A\n", p + 1);
+                    a_mouse |= PB_A;
+                }
+            }
+            /* the Cob Cannon (cob_update): A on it picks it up, then A fires / B puts it back */
+            uint32_t cob_eat = 0;
+            if (solo ? p == 0 : !bank_is_zombie(p)) cob_eat = cob_update(p, now, was);
+            a_mouse |= cob_eat & PB_A;
             static int b_direct[2]; /* versus: B went down as the Cancel key (not over a plant) */
             for (int i = 0; i < 9; i++) {
                 /* single player: B digs when held (below), X is free (the DLC's 9th key pauses); in the Zen
@@ -4736,6 +4856,7 @@ void pad_input_update(const PadIn pads[2], float dt)
                 /* versus: B over a plant (the plant player's) digs once held, with the meter, as in single
                  * player; elsewhere it is the Cancel key at once */
                 if (!solo && slot_btn[i] == PB_B) {
+                    if (cob_eat & PB_B) continue;
                     if ((now & PB_B) && !(was & PB_B) && !(plant_under_cursor_p(p) && !bank_is_zombie(p))) {
                         key(pkeys[p][i], 1);
                         b_direct[p] = 1;
@@ -4763,8 +4884,11 @@ void pad_input_update(const PadIn pads[2], float dt)
             }
             if (pressed & PB_PLUS) {
                 /* versus has no Escape for its menu: the Menu button itself */
+                float vx, vy, vw, vh;
+                uint32_t vbt[4];
                 if (solo) tap(game_hotkey(HK_MENU));
                 else if (versus_chooser_menu()) versus_menu_press();
+                else if (!versus_buttons(vbt, 4) && versus_pause_rect(&vx, &vy, &vw, &vh)) press_hold(PB_PLUS, vx + vw / 2, vy + vh / 2);
                 else versus_button_press(0, PB_PLUS);
             }
             if (!solo && (pressed & PB_MINUS)) versus_button_press(1, PB_MINUS); /* the next one (pause / flag) */
@@ -4777,9 +4901,9 @@ void pad_input_update(const PadIn pads[2], float dt)
                 x_action(b & PB_X, pressed & PB_X, mode);
                 flash_look_update(&pads[0], lvl_on[0] || (pads[0].connected && (pads[0].buttons & (PB_UP | PB_DOWN | PB_LEFT | PB_RIGHT))), dt);
                 if (pressed & PB_MINUS) tap(game_hotkey(HK_PAUSE));
-                dig_update(b & PB_B, dt);
+                dig_update(b & PB_B & ~cob_eat, dt);
             }
-            if (!solo) dig_update_p(p, (b & PB_B) && !b_direct[p] && !bank_is_zombie(p), dt);
+            if (!solo) dig_update_p(p, (b & PB_B & ~cob_eat) && !b_direct[p] && !bank_is_zombie(p), dt);
             /* ZR / ZL held: the sun (or brain) magnet, as PvZ Touch */
             if (!solo || p == 0) vacuum_update(p, (b & (PB_ZR | PB_ZL)) != 0, dt);
             prev[p] = b;
